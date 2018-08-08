@@ -21,7 +21,7 @@
 //       player will automatically fall when going into lower heights
 //
 // 1.3 - 26/07/2018
-//       added some parameters: JumpSpeed, AutoFall
+//       added some parameters: FallSpeed, AutoFall
 //
 // 1.4 - 27/07/2019
 //       added OverWrite parameter
@@ -34,7 +34,21 @@
 //       ability to call a common event when going into or leaving a ground
 // 
 // 1.7 - 03/08/2018
-//       added ladder grounds (9)
+//       added ladder grounds (RegionG = 9)
+//
+// 1.8 - 07/08/2018
+//       player can now dash
+//       added DashSpeed parameter
+//       added AutoClimb parameter
+//       added some plugin commands
+//
+// 1.9 - 08/08/2018
+//       it's now possible to change animations 
+//       (walking, jumping, falling, dashing)
+// 
+// 2.0 - 08/08/2018
+//       better way of handling ground change common events 
+//       you can show an animation during the dash
 // =============================================================================
 //
 
@@ -43,7 +57,7 @@ Imported.Sam_RegionHeights = true;
 
 var Sam = Sam || {};
 Sam.RH = Sam.RH || {};
-Sam.RH.version = 1.7;
+Sam.RH.version = 2.0;
 
 //
 // =============================================================================
@@ -58,25 +72,128 @@ Sam.RH.version = 1.7;
  * @desc Define how fast the player walks
  * Définit la vitesse de marche
  * @default 4
+ * @type number
  *
  * @param FallSpeed
  * @desc Define how fast the player must fall
  * Définit la vitesse de chute
  * @default 6
+ * @type number
+ *
+ * @param DashSpeed
+ * @desc Define how fast the player must fall
+ * Définit la vitesse de chute
+ * @default 8
+ * @type number
  *
  * @param AutoFall
  * @desc Player will fall automatically when going into lower regions
  * Le joueur tombe quand il se rend dans des niveaux plus bas
  * @default false
+ * @type boolean
  *
  * @param AutoClimb
  * @desc Player will automatically climb when going into higher regions
  * Le joueur escalade quand il se rend dans des niveaux plus hauts
  * @default false
+ * @type boolean
  *
  * @param OverWrite
  * @desc OverWrite "Game_Player.prototype.canPass" ?
  * @default true
+ * @type boolean
+ *
+ * @param Dash Animation
+ * @desc 
+ * @default 0
+ * @type number
+ *
+ * =============================================================================
+ * @param ==========================
+ * @default ========================== 
+ * =============================================================================
+ *
+ * @param Animations
+ * @default
+ * @type file
+ * @dir img/characters
+ * 
+ * @param Dash
+ * @parent Animations
+ * @desc Walking animation
+ * @default 0
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ * 
+ * @param Down
+ * @parent Animations
+ * @desc Walking animation
+ * @default 1
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ * 
+ * @param Fall
+ * @parent Animations
+ * @desc Walking animation
+ * @default 2
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ * 
+ * @param Jump
+ * @parent Animations
+ * @desc Walking animation
+ * @default 3
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ * 
+ * @param Run
+ * @parent Animations
+ * @desc Walking animation
+ * @default 4
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ * 
+ * @param Spec
+ * @parent Animations
+ * @desc Walking animation
+ * @default 5
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ * 
+ * @param Idle
+ * @parent Animations
+ * @desc Walking animation
+ * @default 6
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ * 
+ * @param Walk
+ * @parent Animations
+ * @desc Walking animation
+ * @default 7
+ * @type number
+ * @min 0
+ * @max 7
+ * @decimals 0
+ *
+ * =============================================================================
+ * @param ==========================
+ * @default ==========================
+ * =============================================================================
  *
  * @param Ground Change Events
  * @default
@@ -328,8 +445,9 @@ Sam.RH.version = 1.7;
  * 
  * desc :           Character will try to fall down a cliff if possible
  *
- * script :         $gamePlayer.Sam_RH_FallDown();S
+ * script :         $gamePlayer.Sam_RH_FallDown();
  * plugin command : Sam_RH_FallDown
+ *
  * 
  * /// CLIMB UP ///
  *
@@ -337,6 +455,22 @@ Sam.RH.version = 1.7;
  *
  * script :         $gamePlayer.Sam_RH_ClimbUp();
  * plugin command : Sam_RH_ClimbUp
+ *
+ *
+ * /// REGION Z ///
+ *
+ * desc :           Get the height of the region
+ *
+ * script :         $gamePlayer.Sam_RH_RegionZ(x, y);
+ * plugin command : Sam_RH_RegionZ x y
+ *
+ *
+ * /// REGION G ///
+ *
+ * desc :           Get the height of the region
+ *
+ * script :         $gamePlayer.Sam_RH_RegionG(x, y);
+ * plugin command : Sam_RH_RegionG x y
  *
  *
  * /// GET INFO ///
@@ -365,11 +499,24 @@ Sam.RH.version = 1.7;
 
 	Sam.RH.NormalSpeed = Number(Sam.RH.parameters["NormalSpeed"]);
 	Sam.RH.FallSpeed = Number(Sam.RH.parameters["FallSpeed"]);
+	Sam.RH.DashSpeed = Number(Sam.RH.parameters["DashSpeed"]);
 
 	Sam.RH.AutoFall = (Sam.RH.parameters["AutoFall"] == 'true');
 	Sam.RH.AutoClimb = (Sam.RH.parameters["AutoClimb"] == 'true');
 
 	Sam.RH.OverWrite = (Sam.RH.parameters["OverWrite"] == 'true');
+
+	Sam.RH.DashAnimation = Number(Sam.RH.parameters["Dash Animation"]);
+
+	Sam.RH.Anim_Dash = Sam.RH.parameters["Dash"];
+	Sam.RH.Anim_Down = Sam.RH.parameters["Down"];
+	Sam.RH.Anim_Fall = Sam.RH.parameters["Fall"];
+	Sam.RH.Anim_Jump = Sam.RH.parameters["Jump"];
+	Sam.RH.Anim_Run  = Sam.RH.parameters["Run"];
+	Sam.RH.Anim_Spec = Sam.RH.parameters["Spec"];
+	Sam.RH.Anim_Idle = Sam.RH.parameters["Idle"];
+	Sam.RH.Anim_Walk = Sam.RH.parameters["Walk"];
+
 
 
 	// =============================================================================
@@ -651,11 +798,13 @@ Sam.RH.version = 1.7;
 
 			var CommonEventId1 = Number(Sam.RH.parameters["Ground Change From " + RegionG1]);
 			if (CommonEventId1 != 0){
+				console.log('call', CommonEventId1);
 				$gameTemp.reserveCommonEvent(CommonEventId1);
 			}
 
 			var CommonEventId2 = Number(Sam.RH.parameters["Ground Change To " + RegionG2]);
 			if (CommonEventId2 != 0){
+				console.log('call', CommonEventId2);
 				$gameTemp.reserveCommonEvent(CommonEventId2);
 			}
 		}
@@ -693,6 +842,19 @@ Sam.RH.version = 1.7;
 		// dZ = 0 : same height
 		// adZ = .5 : stairs
 
+		// AutoClimb
+		if (RegionZ2 != RegionZ1) {
+		    if (adId != 5 && (RegionG1 != 9 && RegionG2 != 9)) {
+				if (RegionId1 != 0){
+					if (Sam.RH.AutoClimb) {
+						$gamePlayer.setDirection(d);
+						$gamePlayer.Sam_RH_ClimbUp();
+					}
+				}
+			}
+		}
+
+		// Platforms - To be finished
 		var eventId = Sam.RH.eventId(pos2)
 		if ($dataMap.events[eventId]){
 			if ($dataMap.events[eventId].meta.platform){
@@ -700,8 +862,7 @@ Sam.RH.version = 1.7;
 				if (RegionZ1 < eventZ){
 					$gameMap.event(eventId).setPriorityType(2);
 					return true;
-				}
-				else {
+				} else {
 					$gameMap.event(eventId).setPriorityType(0);
 					return true;
 				}
@@ -728,7 +889,7 @@ Sam.RH.version = 1.7;
 			return false;
 		}
 
-	    if (adId != 5 && (RegionG1 != 9 && RegionG2 != 9)) { // && (RegionG1 != 9 && RegionG2 != 9)
+	    if (adId != 5 && (RegionG1 != 9 && RegionG2 != 9)) {
 	    	if (dZ != 0) {
 				if (dZ < 0){
 					if (Sam.RH.AutoFall){
@@ -751,8 +912,8 @@ Sam.RH.version = 1.7;
 	// =============================================================================
 
 	Sam.RH.moveRouteJump = function(jumpx, jumpy, fall = true){
-		var beforeJumpPos = Sam.RH.PlayerRegionPos()
-		var afterJumpPos = Sam.RH.RegionPos(beforeJumpPos.x + jumpx, beforeJumpPos.y + jumpy)
+		var beforeJumpPos = Sam.RH.PlayerRegionPos();
+		var afterJumpPos = Sam.RH.RegionPos(beforeJumpPos.x + jumpx, beforeJumpPos.y + jumpy);
 		var afterFallPos = afterJumpPos;
 		
 		// Create moveRoute
@@ -767,16 +928,21 @@ Sam.RH.version = 1.7;
 		moveRoute.list = moveRoute.list.concat([
 			{code: Game_Character.ROUTE_THROUGH_ON},
 			{code: Game_Character.ROUTE_WALK_ANIME_OFF},
-			{code: Game_Character.ROUTE_DIR_FIX_ON},
-			{code: Game_Character.ROUTE_CHANGE_SPEED, parameters:[6]}
+			{code: Game_Character.ROUTE_DIR_FIX_ON}
 		]);
 
 		// Add moveCommand Jump
 		moveRoute.list = moveRoute.list.concat([
-			{code: Game_Character.ROUTE_JUMP, parameters: [jumpx, jumpy]}
+			{code: Game_Character.ROUTE_CHANGE_IMAGE, parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Jump]},
+			{code: Game_Character.ROUTE_JUMP, parameters: [jumpx, jumpy]},
 		]);
 
 		// Add moveCommand Fall
+		moveRoute.list = moveRoute.list.concat([
+			{code: Game_Character.ROUTE_CHANGE_SPEED, parameters:[Sam.RH.FallSpeed]},
+			{code: Game_Character.ROUTE_CHANGE_IMAGE, parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Fall]}
+		]);
+
 		if (fall) {
 			var playerZ = this.PlayerRegionZ();
 
@@ -786,8 +952,7 @@ Sam.RH.version = 1.7;
 						{code: Game_Character.ROUTE_MOVE_DOWN}
 					]);
 				}
-			}
-			else {
+			} else {
 				while (Sam.RH.RegionId(afterFallPos) == 0 || (playerZ > Sam.RH.NearbyRegionZ(afterFallPos, 2) && playerZ > Sam.RH.RegionZ(afterFallPos))) { 
 					moveRoute.list = moveRoute.list.concat([
 						{code: Game_Character.ROUTE_MOVE_DOWN}
@@ -802,22 +967,160 @@ Sam.RH.version = 1.7;
 
 		// End moveCommands
 		moveRoute.list = moveRoute.list.concat([
+			{code: Game_Character.ROUTE_CHANGE_IMAGE, parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Walk]},
 			{code: Game_Character.ROUTE_THROUGH_OFF},
 			{code: Game_Character.ROUTE_WALK_ANIME_ON},
 			{code: Game_Character.ROUTE_DIR_FIX_OFF},
-			{code: Game_Character.ROUTE_CHANGE_SPEED, parameters:[4]},
+			{code: Game_Character.ROUTE_CHANGE_SPEED, parameters:[Sam.RH.NormalSpeed]}
+		]);
+
+		// Change Ground Common Events
+		var RegionG1 = this.RegionG(beforeJumpPos);
+		var RegionG2 = this.RegionG(afterFallPos);
+
+		if (RegionG1 != RegionG2){
+			console.log('ground changed from ' + RegionG1 + ' To ' + RegionG2);
+
+			var CommonEventId1 = Number(Sam.RH.parameters["Ground Change From " + RegionG1]);
+			if (CommonEventId1 != 0){
+				moveRoute.list = moveRoute.list.concat([
+					{code: Game_Character.ROUTE_SCRIPT, parameters:['$gameTemp.reserveCommonEvent(' + CommonEventId1 + ');']},
+				]);
+			}
+
+			var CommonEventId2 = Number(Sam.RH.parameters["Ground Change To " + RegionG2]);
+			if (CommonEventId2 != 0){
+				moveRoute.list = moveRoute.list.concat([
+					{code: Game_Character.ROUTE_SCRIPT, parameters:['$gameTemp.reserveCommonEvent(' + CommonEventId2 + ');']},
+				]);
+			}
+		}
+
+		// End moveCommands
+		moveRoute.list = moveRoute.list.concat([
 			{code: Game_Character.ROUTE_END},
 		]);
 
 		// set moveRoute
 		$gamePlayer.forceMoveRoute(moveRoute);
+	}
 
-		Sam.RH.GroundChange(beforeJumpPos, afterFallPos);
 
-		console.log('jump:' + jumpx + ', ' + jumpy);
-		console.log('beforeJumpPos: ' + beforeJumpPos.x + ', ' + beforeJumpPos.y);
-		console.log('afterJumpPos: ' + afterJumpPos.x + ', ' + afterJumpPos.y);
-		console.log('afterFallPos: ' + afterFallPos.x + ', ' + afterFallPos.y);
+
+	// =============================================================================
+	// MoveRoute Dashing & Falling
+	// =============================================================================
+
+	Sam.RH.moveRouteDash = function(dash){
+		if (Sam.RH.DashAnimation) {
+			$gamePlayer.requestAnimation(Sam.RH.DashAnimation);
+		}
+
+		console.log(dash);
+
+		var beforeDashPos = Sam.RH.PlayerRegionPos();
+		var afterDashPos = Sam.RH.PlayerRegionPos();
+		if (dash == 1){
+			afterDashPos = Sam.RH.LookingPlayerRegionPos();
+		} else if (dash == 2){
+			afterDashPos = Sam.RH.JumpingPlayerRegionPos();
+		}
+		var afterFallPos = afterDashPos;
+		
+		// Create moveRoute
+		var moveRoute = {
+		    list: [],
+		    skippable: true, 
+		    repeat: false, 
+		    wait: true
+		};
+
+		// Start moveCommands
+		moveRoute.list = moveRoute.list.concat([
+			{code: Game_Character.ROUTE_THROUGH_ON},
+			{code: Game_Character.ROUTE_WALK_ANIME_OFF},
+			{code: Game_Character.ROUTE_DIR_FIX_ON},
+			{code: Game_Character.ROUTE_CHANGE_SPEED, parameters:[Sam.RH.DashSpeed]},
+			{code: Game_Character.ROUTE_CHANGE_IMAGE, parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Dash]}
+		]);
+
+		// Add moveCommand Dash
+		if (dash >= 1) {
+			moveRoute.list = moveRoute.list.concat([
+				{code: Game_Character.ROUTE_MOVE_FORWARD}
+			]);
+		}
+		if (dash >= 2) {
+			moveRoute.list = moveRoute.list.concat([
+				{code: Game_Character.ROUTE_MOVE_FORWARD}
+			]);
+		}
+
+		// Set FallSpeed
+		moveRoute.list = moveRoute.list.concat([
+			{code: Game_Character.ROUTE_CHANGE_SPEED, parameters:[Sam.RH.FallSpeed]},
+			{code: Game_Character.ROUTE_CHANGE_IMAGE, parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Fall]}
+		]);
+
+		// Add moveCommand Fall
+		var playerZ = this.PlayerRegionZ();
+
+		if ($gamePlayer.direction() == 8){
+			if (playerZ > Sam.RH.NearbyRegionZ(afterFallPos, 2)) {
+				moveRoute.list = moveRoute.list.concat([
+					{code: Game_Character.ROUTE_MOVE_DOWN}
+				]);
+			}
+		} else {
+			while (Sam.RH.RegionId(afterFallPos) == 0 || (playerZ > Sam.RH.NearbyRegionZ(afterFallPos, 2) && playerZ > Sam.RH.RegionZ(afterFallPos))) { 
+				moveRoute.list = moveRoute.list.concat([
+					{code: Game_Character.ROUTE_MOVE_DOWN}
+				]);
+			    afterFallPos.y += 1;
+			    playerZ -= 1;
+
+			    if (playerZ < 0) break;
+			}
+		}
+
+		// End moveCommands
+		moveRoute.list = moveRoute.list.concat([
+			{code: Game_Character.ROUTE_CHANGE_IMAGE, parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Walk]},
+			{code: Game_Character.ROUTE_THROUGH_OFF},
+			{code: Game_Character.ROUTE_WALK_ANIME_ON},
+			{code: Game_Character.ROUTE_DIR_FIX_OFF},
+			{code: Game_Character.ROUTE_CHANGE_SPEED, parameters:[Sam.RH.NormalSpeed]}
+		]);
+
+		// Change Ground Common Events
+		var RegionG1 = this.RegionG(beforeDashPos);
+		var RegionG2 = this.RegionG(afterFallPos);
+
+		if (RegionG1 != RegionG2){
+			console.log('ground changed from ' + RegionG1 + ' To ' + RegionG2);
+
+			var CommonEventId1 = Number(Sam.RH.parameters["Ground Change From " + RegionG1]);
+			if (CommonEventId1 != 0){
+				moveRoute.list = moveRoute.list.concat([
+					{code: Game_Character.ROUTE_SCRIPT, parameters:['$gameTemp.reserveCommonEvent(' + CommonEventId1 + ');']},
+				]);
+			}
+
+			var CommonEventId2 = Number(Sam.RH.parameters["Ground Change To " + RegionG2]);
+			if (CommonEventId2 != 0){
+				moveRoute.list = moveRoute.list.concat([
+					{code: Game_Character.ROUTE_SCRIPT, parameters:['$gameTemp.reserveCommonEvent(' + CommonEventId2 + ');']},
+				]);
+			}
+		}
+
+		// End moveCommands
+		moveRoute.list = moveRoute.list.concat([
+			{code: Game_Character.ROUTE_END},
+		]);
+
+		// set moveRoute
+		$gamePlayer.forceMoveRoute(moveRoute);
 	}
 
 
@@ -835,58 +1138,41 @@ Sam.RH.version = 1.7;
 		if (this._direction == 2){
 			if (PlayerZ >= JumpingPlayerRegionZ && PlayerZ + 1 >= ClimbingPlayerRegionZ){
 				Sam.RH.moveRouteJump(0, 2);
-			}
-			else{
-				if (PlayerZ +1 == ClimbingPlayerRegionZ){
+			} else if (PlayerZ +1 == ClimbingPlayerRegionZ){
 					this.Sam_RH_ClimbUp();
-				}
-				else{
-					if (PlayerZ >= LookingPlayerRegionZ){
-						Sam.RH.moveRouteJump(0, 1);
-					}
-					else {
-						Sam.RH.moveRouteJump(0, 0);
-					}
-				}
+			} else if (PlayerZ >= LookingPlayerRegionZ){
+					Sam.RH.moveRouteJump(0, 1);
+			} else {
+				Sam.RH.moveRouteJump(0, 0);
 			}
-		}
-		else{
-			if (PlayerZ + .5 >= JumpingPlayerRegionZ && Sam.RH.JumpingPlayerRegionId() != 0){
-				switch(this._direction){
-					case 4:
-						Sam.RH.moveRouteJump(-2, 0);
-						break;
-					case 6:
-						Sam.RH.moveRouteJump(2, 0);
-						break;
-					case 8:
-						Sam.RH.moveRouteJump(0, -2);
-						break;
-				}
+		} else if (PlayerZ + .5 >= JumpingPlayerRegionZ && Sam.RH.JumpingPlayerRegionId() != 0){
+			switch(this._direction){
+				case 4:
+					Sam.RH.moveRouteJump(-2, 0);
+					break;
+				case 6:
+					Sam.RH.moveRouteJump(2, 0);
+					break;
+				case 8:
+					Sam.RH.moveRouteJump(0, -2);
+					break;
 			}
-			else{
-				if (PlayerZ + 1 == ClimbingPlayerRegionZ){
-					this.Sam_RH_ClimbUp();
-				}
-				else{
-					if (PlayerZ >= LookingPlayerRegionZ && Sam.RH.LookingPlayerRegionId() != 0){
-						switch(this._direction){
-							case 4:
-								Sam.RH.moveRouteJump(-1, 0);
-								break;
-							case 6:
-								Sam.RH.moveRouteJump(1, 0);
-								break;
-							case 8:
-								Sam.RH.moveRouteJump(0, -1);
-								break;
-						}
-					}
-					else{
-						Sam.RH.moveRouteJump(0, 0);
-					}
-				}
+		} else if (PlayerZ + 1 == ClimbingPlayerRegionZ){
+				this.Sam_RH_ClimbUp();
+		} else if (PlayerZ >= LookingPlayerRegionZ && Sam.RH.LookingPlayerRegionId() != 0){
+			switch(this._direction){
+				case 4:
+					Sam.RH.moveRouteJump(-1, 0);
+					break;
+				case 6:
+					Sam.RH.moveRouteJump(1, 0);
+					break;
+				case 8:
+					Sam.RH.moveRouteJump(0, -1);
+					break;
 			}
+		} else {
+			Sam.RH.moveRouteJump(0, 0);
 		}
 	}
 
@@ -929,7 +1215,7 @@ Sam.RH.version = 1.7;
 					Sam.RH.moveRouteJump(0, 1);
 					break;
 				case 8:
-					Sam.RH.moveRouteJump(0, -1, 0);
+					Sam.RH.moveRouteJump(0, -1, false);
 					break;
 			}
 			if (PlayerZ > FallingPlayerRegionZ) {
@@ -945,6 +1231,43 @@ Sam.RH.version = 1.7;
 		}
 	}
 
+	// Dash
+	Game_CharacterBase.prototype.Sam_RH_Dash = function(){
+		var PlayerZ = Sam.RH.PlayerRegionZ();
+		var LookingPlayerRegionZ = Sam.RH.LookingPlayerRegionZ();
+		var ClimbingPlayerRegionZ = Sam.RH.ClimbingPlayerRegionZ();
+		var JumpingPlayerRegionZ = Sam.RH.JumpingPlayerRegionZ();
+
+		if (PlayerZ + .5 >= LookingPlayerRegionZ && (Sam.RH.LookingPlayerRegionId() != 0 || this._direction == 2)){
+			if (PlayerZ + .5 >= JumpingPlayerRegionZ && (Sam.RH.JumpingPlayerRegionId() != 0 || this._direction == 2)){
+				Sam.RH.moveRouteDash(2);
+			} else {
+				Sam.RH.moveRouteDash(1);
+			}
+		} else {
+			Sam.RH.moveRouteDash(0);
+		}
+	}
+
+
+	// RegionZ
+	Game_CharacterBase.prototype.Sam_RH_RegionZ = function(x, y){
+		var pos = {
+			x: x,
+			y: y
+		}
+		return Sam.RH.RegionZ(pos);
+	}
+
+	// RegionG
+	Game_CharacterBase.prototype.Sam_RH_RegionG = function(x, y){
+		var pos = {
+			x: x,
+			y: y
+		}
+		return Sam.RH.RegionG(pos);
+	}
+
 	// GET INFO
 	Game_CharacterBase.prototype.Sam_RH_getInfo = function(){
 		console.log("PlayerRegion: (" + String(Sam.RH.PlayerRegionPos().x) + ", " + String(Sam.RH.PlayerRegionPos().y) + ") " + "d: " + String($gamePlayer.direction()) + ", " + String(Sam.RH.PlayerRegionId()) + ", " + String(Sam.RH.PlayerRegionZ()));
@@ -954,6 +1277,20 @@ Sam.RH.version = 1.7;
 		console.log("FallingPlayerRegion: " + String(Sam.RH.FallingPlayerRegionPos().x) + ", " + String(Sam.RH.FallingPlayerRegionPos().y) + ", " + String(Sam.RH.FallingPlayerRegionId()) + ", " + String(Sam.RH.FallingPlayerRegionZ()));
 
 	}
+
+
+	// =============================================================================
+	// UPDATE
+	// =============================================================================
+
+	// Sam.RH.Game_Character_update = Game_Character.prototype.update;
+	// Game_Character.prototype.update = function(sceneActive) {
+	// 	Sam.RH.Game_Character_update.call(this,sceneActive);
+	// 	if (this._isDashing){
+	// 		$gameActors.actor(1).setCharacterImage($gamePlayer.characterName(), Sam.RH.Anim_Dash);
+	// 		$gamePlayer.refresh();
+	// 	}
+	// };
 
 
 
@@ -975,6 +1312,18 @@ Sam.RH.version = 1.7;
 
 	    if (command == "Sam_RH_ClimbUp"){
 	    	$gamePlayer.Sam_RH_ClimbUp();
+	    }
+
+	    if (command == "Sam_RH_Dash"){
+	    	$gamePlayer.Sam_RH_Dash();
+	    }
+
+	    if (command == "Sam_RH_RegionZ"){
+	    	$gamePlayer.Sam_RH_RegionZ(args[0], args[1]);
+	    }
+
+	    if (command == "Sam_RH_RegionG"){
+	    	$gamePlayer.Sam_RH_RegionG(args[0], args[1]);
 	    }
 
 	    if (command == "Sam_RH_getInfo"){
