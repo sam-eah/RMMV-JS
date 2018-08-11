@@ -783,9 +783,8 @@ Sam.RH.version = 2.0;
 	// Region Ground (RegionG)
 	// =============================================================================
 
-	Sam.RH.RegionG = function(RegionPos) {
-		var RegionId = this.RegionId(RegionPos);
-		return RegionId - Math.floor(RegionId / 10) * 10;
+	Sam.RH.RegionG = function(pos) {
+		return this.RegionId(pos) - this.TileZ(pos) * 10;
 	};
 
 	// =============================================================================
