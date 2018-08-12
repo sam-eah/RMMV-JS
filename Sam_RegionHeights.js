@@ -522,278 +522,290 @@ Sam.RH.version = 2.0;
 	// Direction
 	// =============================================================================
 
-	Sam.RH.direction = function(d) {
+	const directionXY = d => {
 		return {
 			x: ((d - 1) % 3) - 1,
 			y: 1 - Math.trunc((d - 1) / 3)
 		};
 	};
 
-	Sam.RH.playerDirection = function() {
-		return this.direction($gamePlayer.direction());
+	const playerDirection = () => {
+		return directionXY($gamePlayer.direction());
 	};
 
 	// =============================================================================
-	// Region Position
+	// Class
 	// =============================================================================
 
-	Sam.RH.RegionPos = function(regionx, regiony) {
+	class Tile {
+		constructor(pos) {
+			this.pos;
+			this.region = new Region(pos);
+			// this.eventz =
+			this.id = this.region.id;
+			this.z = this.region.z; // TO be changed (add eventz)
+			this.g = this.region.g;
+		}
+	}
+
+	class Region {
+		constructor(pos) {
+			this.id = $gameMap.regionId(pos.x, pos.y);
+			this.z = Math.floor(this.id / 10);
+			this.g = this.id - this.z * 10;
+		}
+	}
+
+	// =============================================================================
+	// Position
+	// =============================================================================
+
+	const Position = (x, y) => {
 		return {
-			x: regionx,
-			y: regiony
+			x: x,
+			y: y
 		};
 	};
 
-	Sam.RH.PlayerRegionPos = function() {
-		return {
-			x: $gamePlayer.x,
-			y: $gamePlayer.y
-		};
+	const PlayerPos = () => {
+		return Position($gamePlayer.x, $gamePlayer.y);
 	};
 
-	Sam.RH.NearbyRegionPos = function(pos, d) {
-		var direction = this.direction(d);
-		return this.RegionPos(pos.x + direction.x, pos.y + direction.y);
+	const NearbyPos = (pos, d) => {
+		var dx = directionXY(d).x;
+		var dy = directionXY(d).y;
+		return Position(pos.x + dx, pos.y + dy);
 	};
 
-	Sam.RH.NearbyPlayerRegionPos = function(d) {
-		return this.NearbyRegionPos(this.PlayerRegionPos(), d);
+	const NearbyPlayerPos = d => {
+		return NearbyPos(PlayerPos(), d);
 	};
 
-	Sam.RH.LookingPlayerRegionPos = function() {
-		return this.NearbyPlayerRegionPos($gamePlayer.direction());
+	const LookingPlayerPos = () => {
+		return NearbyPlayerPos($gamePlayer.direction());
 	};
 
-	Sam.RH.JumpingRegionPos = function(pos, d) {
+	const JumpingPos = (pos, d) => {
 		switch (d) {
 			case 2:
-				return this.RegionPos(pos.x, pos.y + 2);
+				return Position(pos.x, pos.y + 2);
 				break;
 			case 4:
-				return this.RegionPos(pos.x - 2, pos.y);
+				return Position(pos.x - 2, pos.y);
 				break;
 			case 6:
-				return this.RegionPos(pos.x + 2, pos.y);
+				return Position(pos.x + 2, pos.y);
 				break;
 			case 8:
-				return this.RegionPos(pos.x, pos.y - 2);
+				return Position(pos.x, pos.y - 2);
 				break;
 		}
 	};
 
-	Sam.RH.JumpingPlayerRegionPos = function() {
-		return this.JumpingRegionPos(
-			this.PlayerRegionPos(),
-			$gamePlayer.direction()
-		);
+	const JumpingPlayerPos = () => {
+		return JumpingPos(PlayerPos(), $gamePlayer.direction());
 	};
 
-	Sam.RH.ClimbingRegionPos = function(pos, d) {
+	const ClimbingPos = (pos, d) => {
 		switch (d) {
 			case 2:
-				return this.NearbyRegionPos(pos, 2);
+				return NearbyPos(Position(pos.x, pos.y, 2));
 				break;
 			case 4:
-				return this.NearbyRegionPos(pos, 7);
+				return NearbyPos(Position(pos.x, pos.y, 7));
 				break;
 			case 6:
-				return this.NearbyRegionPos(pos, 9);
+				return NearbyPos(Position(pos.x, pos.y, 9));
 				break;
 			case 8:
-				return this.JumpingRegionPos(pos, 8);
+				return JumpingPos(Position(pos.x, pos.y, 8));
 				break;
 		}
 	};
 
-	Sam.RH.ClimbingPlayerRegionPos = function() {
-		return this.ClimbingRegionPos(
-			this.PlayerRegionPos(),
-			$gamePlayer.direction()
-		);
+	const ClimbingPlayerPos = () => {
+		return ClimbingPos(PlayerPos(), $gamePlayer.direction());
 	};
 
-	Sam.RH.FallingRegionPos = function(pos, d) {
+	const FallingPos = (pos, d) => {
 		switch (d) {
 			case 2:
-				return this.NearbyRegionPos(pos, 2);
+				return NearbyPos(Position(pos.x, pos.y, 2));
 				break;
 			case 4:
-				return this.NearbyRegionPos(pos, 1);
+				return NearbyPos(Position(pos.x, pos.y, 1));
 				break;
 			case 6:
-				return this.NearbyRegionPos(pos, 3);
+				return NearbyPos(Position(pos.x, pos.y, 3));
 				break;
 			case 8:
-				return this.NearbyRegionPos(pos, 8);
+				return NearbyPos(Position(pos.x, pos.y, 8));
 				break;
 		}
 	};
 
-	Sam.RH.FallingPlayerRegionPos = function() {
-		return this.FallingRegionPos(
-			this.PlayerRegionPos(),
-			$gamePlayer.direction()
-		);
+	const FallingPlayerPos = () => {
+		return FallingPos(PlayerPos(), $gamePlayer.direction());
 	};
 
 	// =============================================================================
-	// Region Id
+	// Tile
 	// =============================================================================
 
-	Sam.RH.RegionId = function(pos) {
+	const setTile = function(pos) {
 		var regionId = $gameMap.regionId(pos.x, pos.y);
 		return regionId ? regionId : 0;
 	};
 
-	Sam.RH.NearbyRegionId = function(pos, d) {
-		return this.RegionId(this.NearbyRegionPos(pos, d));
+	const NearbyTile = function(pos, d) {
+		return new Tile(NearbyPos(pos, d));
 	};
 
-	Sam.RH.NearbyPlayerRegionId = function(d) {
-		return this.RegionId(this.NearbyPlayerRegionPos(d));
+	const NearbyPlayerTile = function(d) {
+		return new Tile(NearbyPlayerPos(d));
 	};
 
-	Sam.RH.PlayerRegionId = function() {
-		return this.RegionId(this.PlayerRegionPos());
+	const PlayerTile = function() {
+		return new Tile(PlayerPos());
 	};
 
-	Sam.RH.LookingPlayerRegionId = function() {
-		return this.RegionId(this.LookingPlayerRegionPos());
+	const LookingPlayerTile = function() {
+		return new Tile(LookingPlayerPos());
 	};
 
-	Sam.RH.JumpingRegionId = function(pos, d) {
-		return this.RegionId(this.JumpingRegionPos(pos, d));
+	const JumpingTile = function(pos, d) {
+		return new Tile(JumpingPos(pos, d));
 	};
 
-	Sam.RH.JumpingPlayerRegionId = function() {
-		return this.RegionId(this.JumpingPlayerRegionPos());
+	const JumpingPlayerTile = function() {
+		return new Tile(JumpingPlayerPos());
 	};
 
-	Sam.RH.ClimbingRegionId = function(pos, d) {
-		return this.RegionId(this.ClimbingRegionPos());
+	const ClimbingTile = function(pos, d) {
+		return new Tile(ClimbingPos());
 	};
 
-	Sam.RH.ClimbingPlayerRegionId = function() {
-		return this.RegionId(this.ClimbingPlayerRegionPos());
+	const ClimbingPlayerTile = function() {
+		return new Tile(ClimbingPlayerPos());
 	};
 
-	Sam.RH.FallingRegionId = function(pos, d) {
-		return this.RegionId(this.FallingRegionPos(pos, d));
+	const FallingTile = function(pos, d) {
+		return new Tile(FallingPos(pos, d));
 	};
 
-	Sam.RH.FallingPlayerRegionId = function() {
-		return this.RegionId(this.FallingPlayerRegionPos());
+	const FallingPlayerTile = function() {
+		return new Tile(FallingPlayerPos());
 	};
 
 	// =============================================================================
 	// Event Id/IdZ/PosZ
 	// =============================================================================
 
-	Sam.RH.eventId = function(pos) {
-		return $gameMap.eventIdXy(pos.x, pos.y);
-	};
+	// Sam.RH.eventId = function(pos) {
+	// 	return $gameMap.eventIdXy(pos.x, pos.y);
+	// };
 
-	Sam.RH.eventIdZ = function(eventId) {
-		return eventId ? Number($dataMap.events[eventId].meta.height) : 0;
-	};
+	// Sam.RH.eventIdZ = function(eventId) {
+	// 	return eventId ? Number($dataMap.events[eventId].meta.height) : 0;
+	// };
 
-	Sam.RH.eventPosZ = function(pos) {
-		return this.eventIdZ(this.eventId(pos));
-	};
+	// Sam.RH.eventPosZ = function(pos) {
+	// 	return this.eventIdZ(this.eventId(pos));
+	// };
 
 	// =============================================================================
 	// Region Z
 	// =============================================================================
 
-	Sam.RH.TileZ = function(pos) {
-		return Math.floor(this.RegionId(pos) / 10);
-	};
+	// Sam.RH.TileZ = function(pos) {
+	// 	return Math.floor(this.RegionId(pos) / 10);
+	// };
 
-	Sam.RH.RegionZ = function(pos) {
-		for (var i = 1; i <= 3; i++) {
-			var eventPos = this.RegionPos(pos.x, pos.y + i);
-			var eventId = this.eventId(eventPos);
-			if (eventId) {
-				var eventZ = this.eventIdZ(eventId);
-				if (
-					eventZ > 0 &&
-					eventZ <= i &&
-					$dataMap.events[eventId].meta.pillar
-				) {
-					var posZ = {
-						x: pos.x,
-						y: pos.y + eventZ
-					};
-					return eventZ + this.TileZ(posZ);
-				}
-			}
-		}
-		var eventPos = this.RegionPos(pos.x, pos.y);
-		var eventId = this.eventId(eventPos);
-		if (eventId) {
-			var eventZ = this.eventIdZ(eventId);
-			if (eventZ > 0 && $dataMap.events[eventId].meta.platform) {
-				return eventZ;
-			}
-		}
-		return this.TileZ(pos);
-	};
+	// Sam.RH.RegionZ = function(pos) {
+	// 	for (var i = 1; i <= 3; i++) {
+	// 		var eventPos = this.Tile(pos.x, pos.y + i);
+	// 		var eventId = this.eventId(eventPos);
+	// 		if (eventId) {
+	// 			var eventZ = this.eventIdZ(eventId);
+	// 			if (
+	// 				eventZ > 0 &&
+	// 				eventZ <= i &&
+	// 				$dataMap.events[eventId].meta.pillar
+	// 			) {
+	// 				var posZ = {
+	// 					x: pos.x,
+	// 					y: pos.y + eventZ
+	// 				};
+	// 				return eventZ + this.TileZ(posZ);
+	// 			}
+	// 		}
+	// 	}
+	// 	var eventPos = this.Tile(pos.x, pos.y);
+	// 	var eventId = this.eventId(eventPos);
+	// 	if (eventId) {
+	// 		var eventZ = this.eventIdZ(eventId);
+	// 		if (eventZ > 0 && $dataMap.events[eventId].meta.platform) {
+	// 			return eventZ;
+	// 		}
+	// 	}
+	// 	return this.TileZ(pos);
+	// };
 
-	Sam.RH.PlayerRegionZ = function() {
-		return this.RegionZ(this.PlayerRegionPos());
-	};
+	// Sam.RH.PlayerRegionZ = function() {
+	// 	return this.RegionZ(this.PlayerTile());
+	// };
 
-	Sam.RH.NearbyRegionZ = function(pos, d) {
-		return this.RegionZ(this.NearbyRegionPos(pos, d));
-	};
+	// Sam.RH.NearbyRegionZ = function(pos, d) {
+	// 	return this.RegionZ(this.NearbyTile(pos, d));
+	// };
 
-	Sam.RH.NearbyPlayerRegionZ = function(d) {
-		return this.RegionZ(this.NearbyPlayerRegionPos(d));
-	};
+	// Sam.RH.NearbyPlayerRegionZ = function(d) {
+	// 	return this.RegionZ(this.NearbyPlayerTile(d));
+	// };
 
-	Sam.RH.LookingPlayerRegionZ = function() {
-		return this.RegionZ(this.LookingPlayerRegionPos());
-	};
+	// Sam.RH.LookingPlayerRegionZ = function() {
+	// 	return this.RegionZ(this.LookingPlayerTile());
+	// };
 
-	Sam.RH.JumpingRegionZ = function(pos, d) {
-		return this.RegionZ(this.JumpingRegionPos(pos, d));
-	};
+	// Sam.RH.JumpingRegionZ = function(pos, d) {
+	// 	return this.RegionZ(this.JumpingTile(pos, d));
+	// };
 
-	Sam.RH.JumpingPlayerRegionZ = function() {
-		return this.RegionZ(this.JumpingPlayerRegionPos());
-	};
+	// Sam.RH.JumpingPlayerRegionZ = function() {
+	// 	return this.RegionZ(this.JumpingPlayerTile());
+	// };
 
-	Sam.RH.ClimbingRegionZ = function(pos, d) {
-		return this.RegionZ(this.ClimbingRegionPos(pos, d));
-	};
+	// Sam.RH.ClimbingRegionZ = function(pos, d) {
+	// 	return this.RegionZ(this.ClimbingTile(pos, d));
+	// };
 
-	Sam.RH.ClimbingPlayerRegionZ = function() {
-		return this.RegionZ(this.ClimbingPlayerRegionPos());
-	};
+	// Sam.RH.ClimbingPlayerRegionZ = function() {
+	// 	return this.RegionZ(this.ClimbingPlayerTile());
+	// };
 
-	Sam.RH.FallingRegionZ = function(pos, d) {
-		return this.RegionZ(this.FallingRegionPos(pos, d));
-	};
+	// Sam.RH.FallingRegionZ = function(pos, d) {
+	// 	return this.RegionZ(this.FallingTile(pos, d));
+	// };
 
-	Sam.RH.FallingPlayerRegionZ = function() {
-		return this.RegionZ(this.FallingPlayerRegionPos());
-	};
+	// Sam.RH.FallingPlayerRegionZ = function() {
+	// 	return this.RegionZ(this.FallingPlayerTile());
+	// };
 
 	// =============================================================================
 	// Region Ground (RegionG)
 	// =============================================================================
 
-	Sam.RH.RegionG = function(pos) {
-		return this.RegionId(pos) - this.TileZ(pos) * 10;
-	};
+	// Sam.RH.RegionG = function(pos) {
+	// 	return this.RegionId(pos) - this.TileZ(pos) * 10;
+	// };
 
 	// =============================================================================
-	// canPass
+	// Ground Change
 	// =============================================================================
 
 	Sam.RH.GroundChange = function(pos1, pos2) {
-		var RegionG1 = this.RegionG(pos1);
-		var RegionG2 = this.RegionG(pos2);
+		var RegionG1 = new Tile(pos1).g;
+		var RegionG2 = new Tile(pos2).g;
 
 		if (RegionG1 != RegionG2) {
 			console.log("ground changed from " + RegionG1 + " To " + RegionG2);
@@ -816,6 +828,10 @@ Sam.RH.version = 2.0;
 		}
 	};
 
+	// =============================================================================
+	// canPass
+	// =============================================================================
+
 	// OVERWRITE
 	if (Sam.RH.OverWrite) {
 		Game_Player.prototype.canPass = function(x, y, d) {
@@ -828,20 +844,23 @@ Sam.RH.version = 2.0;
 	};
 
 	Game_Player.prototype.Sam_RH_canPass = function(x, y, d) {
-		var pos1 = Sam.RH.RegionPos(x, y);
-		var pos2 = Sam.RH.RegionPos(
+		var pos1 = Position(x, y);
+		var pos2 = Position(
 			$gameMap.roundXWithDirection(x, d),
 			$gameMap.roundYWithDirection(y, d)
 		);
 
-		var RegionId1 = Sam.RH.RegionId(pos1);
-		var RegionId2 = Sam.RH.RegionId(pos2);
+		var Tile1 = new Tile(pos1);
+		var Tile2 = new Tile(pos2);
 
-		var RegionZ1 = Sam.RH.RegionZ(pos1);
-		var RegionZ2 = Sam.RH.RegionZ(pos2);
+		var RegionId1 = Tile1.region.id;
+		var RegionId2 = Tile2.region.id;
 
-		var RegionG1 = Sam.RH.RegionG(pos1);
-		var RegionG2 = Sam.RH.RegionG(pos2);
+		var RegionZ1 = Tile1.region.z;
+		var RegionZ2 = Tile2.region.z;
+
+		var RegionG1 = Tile1.region.g;
+		var RegionG2 = Tile2.region.g;
 
 		// Calculate height (z) difference
 		var dZ = RegionZ2 - RegionZ1;
@@ -862,19 +881,19 @@ Sam.RH.version = 2.0;
 		}
 
 		// Platforms - To be finished
-		var eventId = Sam.RH.eventId(pos2);
-		if ($dataMap.events[eventId]) {
-			if ($dataMap.events[eventId].meta.platform) {
-				var eventZ = Sam.RH.eventPosZ(pos2);
-				if (RegionZ1 < eventZ) {
-					$gameMap.event(eventId).setPriorityType(2);
-					return true;
-				} else {
-					$gameMap.event(eventId).setPriorityType(0);
-					return true;
-				}
-			}
-		}
+		// var eventId = Sam.RH.eventId(pos2);
+		// if ($dataMap.events[eventId]) {
+		// 	if ($dataMap.events[eventId].meta.platform) {
+		// 		var eventZ = Sam.RH.eventPosZ(pos2);
+		// 		if (RegionZ1 < eventZ) {
+		// 			$gameMap.event(eventId).setPriorityType(2);
+		// 			return true;
+		// 		} else {
+		// 			$gameMap.event(eventId).setPriorityType(0);
+		// 			return true;
+		// 		}
+		// 	}
+		// }
 
 		if (!$gameMap.isValid(pos2.x, pos2.y)) {
 			return false;
@@ -917,8 +936,8 @@ Sam.RH.version = 2.0;
 	// =============================================================================
 
 	Sam.RH.moveRouteJump = function(jumpx, jumpy, fall = true) {
-		var beforeJumpPos = Sam.RH.PlayerRegionPos();
-		var afterJumpPos = Sam.RH.RegionPos(
+		var beforeJumpPos = PlayerPos();
+		var afterJumpPos = Position(
 			beforeJumpPos.x + jumpx,
 			beforeJumpPos.y + jumpy
 		);
@@ -964,19 +983,19 @@ Sam.RH.version = 2.0;
 		]);
 
 		if (fall) {
-			var playerZ = this.PlayerRegionZ();
+			var playerZ = PlayerTile().z;
 
 			if ($gamePlayer.direction() == 8) {
-				if (playerZ > Sam.RH.NearbyRegionZ(afterFallPos, 2)) {
+				if (playerZ > NearbyTile(afterFallPos, 2).z) {
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
 				}
 			} else {
 				while (
-					Sam.RH.RegionId(afterFallPos) == 0 ||
-					(playerZ > Sam.RH.NearbyRegionZ(afterFallPos, 2) &&
-						playerZ > Sam.RH.RegionZ(afterFallPos))
+					setTile(afterFallPos).id == 0 ||
+					(playerZ > NearbyTile(afterFallPos, 2).z &&
+						playerZ > setTile(afterFallPos).z)
 				) {
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
@@ -1005,8 +1024,8 @@ Sam.RH.version = 2.0;
 		]);
 
 		// Change Ground Common Events
-		var RegionG1 = this.RegionG(beforeJumpPos);
-		var RegionG2 = this.RegionG(afterFallPos);
+		var RegionG1 = setTile(beforeJumpPos).g;
+		var RegionG2 = setTile(afterFallPos).g;
 
 		if (RegionG1 != RegionG2) {
 			console.log("ground changed from " + RegionG1 + " To " + RegionG2);
@@ -1061,12 +1080,12 @@ Sam.RH.version = 2.0;
 	Sam.RH.moveRouteDash = function(dash) {
 		console.log(dash);
 
-		var beforeDashPos = Sam.RH.PlayerRegionPos();
-		var afterDashPos = Sam.RH.PlayerRegionPos();
+		var beforeDashPos = PlayerPos();
+		var afterDashPos = beforeDashPos;
 		if (dash == 1) {
-			afterDashPos = Sam.RH.LookingPlayerRegionPos();
+			afterDashPos = LookingPlayerPos();
 		} else if (dash == 2) {
-			afterDashPos = Sam.RH.JumpingPlayerRegionPos();
+			afterDashPos = JumpingPlayerPos();
 		}
 		var afterFallPos = afterDashPos;
 
@@ -1132,19 +1151,19 @@ Sam.RH.version = 2.0;
 		]);
 
 		// Add moveCommand Fall
-		var playerZ = this.PlayerRegionZ();
+		var playerZ = PlayerTile().z;
 
 		if ($gamePlayer.direction() == 8) {
-			if (playerZ > Sam.RH.NearbyRegionZ(afterFallPos, 2)) {
+			if (playerZ > NearbyTile(afterFallPos, 2).z) {
 				moveRoute.list = moveRoute.list.concat([
 					{ code: Game_Character.ROUTE_MOVE_DOWN }
 				]);
 			}
 		} else {
 			while (
-				Sam.RH.RegionId(afterFallPos) == 0 ||
-				(playerZ > Sam.RH.NearbyRegionZ(afterFallPos, 2) &&
-					playerZ > Sam.RH.RegionZ(afterFallPos))
+				setTile(afterFallPos).id == 0 ||
+				(playerZ > NearbyTile(afterFallPos, 2).z &&
+					playerZ > setTile(afterFallPos).z)
 			) {
 				moveRoute.list = moveRoute.list.concat([
 					{ code: Game_Character.ROUTE_MOVE_DOWN }
@@ -1226,28 +1245,28 @@ Sam.RH.version = 2.0;
 	// =============================================================================
 
 	Game_CharacterBase.prototype.Sam_RH_Jump = function() {
-		var PlayerZ = Sam.RH.PlayerRegionZ();
-		var LookingPlayerRegionZ = Sam.RH.LookingPlayerRegionZ();
-		var ClimbingPlayerRegionZ = Sam.RH.ClimbingPlayerRegionZ();
-		var JumpingPlayerRegionZ = Sam.RH.JumpingPlayerRegionZ();
-		console.log(JumpingPlayerRegionZ);
+		var PlayerZ = PlayerTile().z;
+		var LookingPlayerTileZ = LookingPlayerTile().z;
+		var ClimbingPlayerTileZ = ClimbingPlayerTile().z;
+		var JumpingPlayerTileZ = JumpingPlayerTile().z;
+		console.log(JumpingPlayerTileZ);
 
 		if (this._direction == 2) {
 			if (
-				PlayerZ >= JumpingPlayerRegionZ &&
-				PlayerZ + 1 >= ClimbingPlayerRegionZ
+				PlayerZ >= JumpingPlayerTileZ &&
+				PlayerZ + 1 >= ClimbingPlayerTileZ
 			) {
 				Sam.RH.moveRouteJump(0, 2);
-			} else if (PlayerZ + 1 == ClimbingPlayerRegionZ) {
+			} else if (PlayerZ + 1 == ClimbingPlayerTileZ) {
 				this.Sam_RH_ClimbUp();
-			} else if (PlayerZ >= LookingPlayerRegionZ) {
+			} else if (PlayerZ >= LookingPlayerTileZ) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
 				Sam.RH.moveRouteJump(0, 0);
 			}
 		} else if (
-			PlayerZ + 0.5 >= JumpingPlayerRegionZ &&
-			Sam.RH.JumpingPlayerRegionId() != 0
+			PlayerZ + 0.5 >= JumpingPlayerTileZ &&
+			JumpingPlayerTile().id != 0
 		) {
 			switch (this._direction) {
 				case 4:
@@ -1260,11 +1279,11 @@ Sam.RH.version = 2.0;
 					Sam.RH.moveRouteJump(0, -2);
 					break;
 			}
-		} else if (PlayerZ + 1 == ClimbingPlayerRegionZ) {
+		} else if (PlayerZ + 1 == ClimbingPlayerTileZ) {
 			this.Sam_RH_ClimbUp();
 		} else if (
-			PlayerZ >= LookingPlayerRegionZ &&
-			Sam.RH.LookingPlayerRegionId() != 0
+			PlayerZ >= LookingPlayerTileZ &&
+			LookingPlayerTile().id != 0
 		) {
 			switch (this._direction) {
 				case 4:
@@ -1284,14 +1303,11 @@ Sam.RH.version = 2.0;
 
 	// Climb Up
 	Game_CharacterBase.prototype.Sam_RH_ClimbUp = function() {
-		var PlayerZ = Sam.RH.PlayerRegionZ();
-		var dZ = Sam.RH.LookingPlayerRegionZ() - PlayerZ;
+		var PlayerZ = PlayerTile().z;
+		var dZ = LookingPlayerTile().z - PlayerZ;
 		var adZ = Math.abs(dZ);
 
-		if (
-			PlayerZ + 1 == Sam.RH.ClimbingPlayerRegionZ() &&
-			(adZ != 0 || adZ != 0.5)
-		) {
+		if (PlayerZ + 1 == ClimbingPlayerTile().z && (adZ != 0 || adZ != 0.5)) {
 			switch (this._direction) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1, false);
@@ -1313,11 +1329,11 @@ Sam.RH.version = 2.0;
 	Game_CharacterBase.prototype.Sam_RH_FallDown = function() {
 		console.log("Sam_RH_FallDown");
 
-		var PlayerZ = Sam.RH.PlayerRegionZ();
-		var LookingPlayerRegionZ = Sam.RH.LookingPlayerRegionZ();
-		var FallingPlayerRegionZ = Sam.RH.FallingPlayerRegionZ();
+		var PlayerZ = Sam.RH.PlayerTileZ();
+		var LookingPlayerTileZ = LookingPlayerTile().z;
+		var FallingPlayerTileZ = FallingPlayerTile().z;
 
-		if (PlayerZ > LookingPlayerRegionZ) {
+		if (PlayerZ > LookingPlayerTileZ) {
 			switch (this._direction) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1);
@@ -1326,7 +1342,7 @@ Sam.RH.version = 2.0;
 					Sam.RH.moveRouteJump(0, -1, false);
 					break;
 			}
-			if (PlayerZ > FallingPlayerRegionZ) {
+			if (PlayerZ > FallingPlayerTileZ) {
 				switch (this._direction) {
 					case 4:
 						Sam.RH.moveRouteJump(-1, 0);
@@ -1341,18 +1357,18 @@ Sam.RH.version = 2.0;
 
 	// Dash
 	Game_CharacterBase.prototype.Sam_RH_Dash = function() {
-		var PlayerZ = Sam.RH.PlayerRegionZ();
-		var LookingPlayerRegionZ = Sam.RH.LookingPlayerRegionZ();
-		var ClimbingPlayerRegionZ = Sam.RH.ClimbingPlayerRegionZ();
-		var JumpingPlayerRegionZ = Sam.RH.JumpingPlayerRegionZ();
+		var PlayerZ = PlayerTile().z;
+		var LookingPlayerTileZ = LookingPlayerTileZ().z;
+		var ClimbingPlayerTileZ = ClimbingPlayerTileZ().z;
+		var JumpingPlayerTileZ = JumpingPlayerTileZ().z;
 
 		if (
-			PlayerZ + 0.5 >= LookingPlayerRegionZ &&
-			(Sam.RH.LookingPlayerRegionId() != 0 || this._direction == 2)
+			PlayerZ + 0.5 >= LookingPlayerTileZ &&
+			(LookingPlayerTile().id != 0 || this._direction == 2)
 		) {
 			if (
-				PlayerZ + 0.5 >= JumpingPlayerRegionZ &&
-				(Sam.RH.JumpingPlayerRegionId() != 0 || this._direction == 2)
+				PlayerZ + 0.5 >= JumpingPlayerTileZ &&
+				(JumpingPlayerTile().id != 0 || this._direction == 2)
 			) {
 				Sam.RH.moveRouteDash(2);
 			} else {
@@ -1369,7 +1385,7 @@ Sam.RH.version = 2.0;
 			x: x,
 			y: y
 		};
-		return Sam.RH.RegionZ(pos);
+		return new Tile(pos).z;
 	};
 
 	// RegionG
@@ -1378,63 +1394,63 @@ Sam.RH.version = 2.0;
 			x: x,
 			y: y
 		};
-		return Sam.RH.RegionG(pos);
+		return new Tile(pos).g;
 	};
 
 	// GET INFO
 	Game_CharacterBase.prototype.Sam_RH_getInfo = function() {
 		console.log(
-			"PlayerRegion: (" +
-				String(Sam.RH.PlayerRegionPos().x) +
+			"PlayerTile: (" +
+				String(PlayerTile().pos.x) +
 				", " +
-				String(Sam.RH.PlayerRegionPos().y) +
+				String(PlayerTile().pos.y) +
 				") " +
 				"d: " +
 				String($gamePlayer.direction()) +
 				", " +
-				String(Sam.RH.PlayerRegionId()) +
+				String(PlayerTile().id) +
 				", " +
-				String(Sam.RH.PlayerRegionZ())
+				String(PlayerTile().z)
 		);
 		console.log(
-			"LookingPlayerRegion: " +
-				String(Sam.RH.LookingPlayerRegionPos().x) +
+			"LookingPlayerTile: " +
+				String(LookingPlayerTile().pos.x) +
 				", " +
-				String(Sam.RH.LookingPlayerRegionPos().y) +
+				String(LookingPlayerTile().pos.y) +
 				", " +
-				String(Sam.RH.LookingPlayerRegionId()) +
+				String(LookingPlayerTile().id) +
 				", " +
-				String(Sam.RH.LookingPlayerRegionZ())
+				String(LookingPlayerTile().z)
 		);
 		console.log(
-			"JumpingPlayerRegion: " +
-				String(Sam.RH.JumpingPlayerRegionPos().x) +
+			"JumpingPlayerTile: " +
+				String(JumpingPlayerTile().pos.x) +
 				", " +
-				String(Sam.RH.JumpingPlayerRegionPos().y) +
+				String(JumpingPlayerTile().pos.y) +
 				", " +
-				String(Sam.RH.JumpingPlayerRegionId()) +
+				String(JumpingPlayerTile().id) +
 				", " +
-				String(Sam.RH.JumpingPlayerRegionZ())
+				String(JumpingPlayerTile().z)
 		);
 		console.log(
-			"ClimbingPlayerRegion: " +
-				String(Sam.RH.ClimbingPlayerRegionPos().x) +
+			"ClimbingPlayerTile: " +
+				String(ClimbingPlayerTile().pos.x) +
 				", " +
-				String(Sam.RH.ClimbingPlayerRegionPos().y) +
+				String(ClimbingPlayerTile().pos.y) +
 				", " +
-				String(Sam.RH.ClimbingPlayerRegionId()) +
+				String(ClimbingPlayerTile().id) +
 				", " +
-				String(Sam.RH.ClimbingPlayerRegionZ())
+				String(ClimbingPlayerTile().z)
 		);
 		console.log(
-			"FallingPlayerRegion: " +
-				String(Sam.RH.FallingPlayerRegionPos().x) +
+			"FallingPlayerTile: " +
+				String(FallingPlayerTile().pos.x) +
 				", " +
-				String(Sam.RH.FallingPlayerRegionPos().y) +
+				String(FallingPlayerTile().pos.y) +
 				", " +
-				String(Sam.RH.FallingPlayerRegionId()) +
+				String(FallingPlayerTile().id) +
 				", " +
-				String(Sam.RH.FallingPlayerRegionZ())
+				String(FallingPlayerTile().z)
 		);
 	};
 
