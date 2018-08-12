@@ -52,6 +52,9 @@
 //
 // 2.1 - 11/08/2018
 //       player can't Jump/Dash while jumping/dashing/climbing/falling
+//
+// 3.0 - 12/08/2018
+//       ES6 : class, arrow functions, ...
 // =============================================================================
 //
 
@@ -60,7 +63,7 @@ Imported.Sam_RegionHeights = true;
 
 var Sam = Sam || {};
 Sam.RH = Sam.RH || {};
-Sam.RH.version = 2.0;
+Sam.RH.version = 3.0;
 
 //
 // =============================================================================
@@ -650,15 +653,15 @@ Sam.RH.version = 2.0;
 	// Event Id/IdZ/TileZ
 	// =============================================================================
 
-	// Sam.RH.eventId = function(pos) {
+	// Sam.RH.eventId = (pos) {
 	// 	return $gameMap.eventIdXy(x, y);
 	// };
 
-	// Sam.RH.eventIdZ = function(eventId) {
+	// Sam.RH.eventIdZ = (eventId) {
 	// 	return eventId ? Number($dataMap.events[eventId].meta.height) : 0;
 	// };
 
-	// Sam.RH.eventTileZ = function(pos) {
+	// Sam.RH.eventTileZ = (pos) {
 	// 	return this.eventIdZ(this.eventId(pos));
 	// };
 
@@ -666,7 +669,7 @@ Sam.RH.version = 2.0;
 	// Region Z
 	// =============================================================================
 
-	// Sam.RH.RegionZ = function(pos) {
+	// Sam.RH.RegionZ = (pos) {
 	// 	for (var i = 1; i <= 3; i++) {
 	// 		var eventTile = this.Tile(x, y + i);
 	// 		var eventId = this.eventId(eventTile);
@@ -700,7 +703,7 @@ Sam.RH.version = 2.0;
 	// Ground Change
 	// =============================================================================
 
-	Sam.RH.GroundChange = function(Tile1, Tile2) {
+	Sam.RH.GroundChange = (Tile1, Tile2) => {
 		var TileG1 = Tile1.g;
 		var TileG2 = Tile2.g;
 
@@ -731,16 +734,16 @@ Sam.RH.version = 2.0;
 
 	// OVERWRITE
 	if (Sam.RH.OverWrite) {
-		Game_Player.prototype.canPass = function(x, y, d) {
-			return this.Sam_RH_canPass(x, y, d);
+		Game_Player.prototype.canPass = (x, y, d) => {
+			return Game_Player.prototype.Sam_RH_canPass(x, y, d);
 		};
 	}
 
-	Game_Player.prototype.canPassTile = function(x, y) {
-		return this.Sam_RH_canPass(this._direction);
+	Game_Player.prototype.canPassTile = (x, y) => {
+		return Game_Player.prototype.Sam_RH_canPass($gamePlayer.direction());
 	};
 
-	Game_Player.prototype.Sam_RH_canPass = function(x, y, d) {
+	Game_Player.prototype.Sam_RH_canPass = (x, y, d) => {
 		var Tile1 = setTile(x, y);
 		var Tile2 = setTile(
 			$gameMap.roundXWithDirection(x, d),
@@ -793,7 +796,10 @@ Sam.RH.version = 2.0;
 			return false;
 		}
 
-		if (this.isThrough() || this.isDebugThrough()) {
+		if (
+			Game_Player.prototype.isThrough() ||
+			Game_Player.prototype.isDebugThrough()
+		) {
 			Sam.RH.GroundChange(Tile1, Tile2);
 			return true;
 		}
@@ -801,7 +807,7 @@ Sam.RH.version = 2.0;
 		if (TileId2 == 255) {
 			return false;
 		}
-		if (this.isCollidedWithCharacters(Tile2.x, Tile2.y)) {
+		if (Game_Player.prototype.isCollidedWithCharacters(Tile2.x, Tile2.y)) {
 			return false;
 		}
 
@@ -829,7 +835,7 @@ Sam.RH.version = 2.0;
 	// MoveRoute Jumping & Falling
 	// =============================================================================
 
-	Sam.RH.moveRouteJump = function(jumpx, jumpy, fall = true) {
+	Sam.RH.moveRouteJump = (jumpx, jumpy, fall = true) => {
 		var beforeJumpTile = PlayerTile();
 		var afterJumpTile = setTile(
 			beforeJumpTile.x + jumpx,
@@ -890,6 +896,7 @@ Sam.RH.version = 2.0;
 					(playerZ > afterFallTile.NearbyTile(2).z &&
 						playerZ > afterFallTile.z)
 				) {
+					console.log("Oui");
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
@@ -899,8 +906,14 @@ Sam.RH.version = 2.0;
 					);
 					playerZ -= 1;
 
-					if (playerZ < 0) break;
+					if (playerZ < 0) {
+						console.log("break");
+						break;
+					}
 				}
+				console.log(playerZ);
+				console.log(afterFallTile);
+				console.log("out");
 			}
 		}
 
@@ -973,7 +986,7 @@ Sam.RH.version = 2.0;
 	// MoveRoute Dashing & Falling
 	// =============================================================================
 
-	Sam.RH.moveRouteDash = function(dash) {
+	Sam.RH.moveRouteDash = dash => {
 		console.log(dash);
 
 		var beforeDashTile = PlayerTile();
@@ -1057,7 +1070,7 @@ Sam.RH.version = 2.0;
 			}
 		} else {
 			while (
-				afterFallTile.id == 0 ||
+				PlayerTile().id == 0 ||
 				(playerZ > afterFallTile.NearbyTile(2).z &&
 					playerZ > afterFallTile.z)
 			) {
@@ -1140,21 +1153,21 @@ Sam.RH.version = 2.0;
 	// Game_CharacterBase
 	// =============================================================================
 
-	Game_CharacterBase.prototype.Sam_RH_Jump = function() {
+	Game_CharacterBase.prototype.Sam_RH_Jump = () => {
 		var PlayerZ = PlayerTile().z;
 		var LookingPlayerTileZ = LookingPlayerTile().z;
 		var ClimbingPlayerTileZ = ClimbingPlayerTile().z;
 		var JumpingPlayerTileZ = JumpingPlayerTile().z;
 		console.log(JumpingPlayerTileZ);
 
-		if (this._direction == 2) {
+		if ($gamePlayer.direction() == 2) {
 			if (
 				PlayerZ >= JumpingPlayerTileZ &&
 				PlayerZ + 1 >= ClimbingPlayerTileZ
 			) {
 				Sam.RH.moveRouteJump(0, 2);
 			} else if (PlayerZ + 1 == ClimbingPlayerTileZ) {
-				this.Sam_RH_ClimbUp();
+				Game_CharacterBase.prototype.Sam_RH_ClimbUp();
 			} else if (PlayerZ >= LookingPlayerTileZ) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
@@ -1164,7 +1177,7 @@ Sam.RH.version = 2.0;
 			PlayerZ + 0.5 >= JumpingPlayerTileZ &&
 			JumpingPlayerTile().id != 0
 		) {
-			switch (this._direction) {
+			switch ($gamePlayer.direction()) {
 				case 4:
 					Sam.RH.moveRouteJump(-2, 0);
 					break;
@@ -1176,12 +1189,12 @@ Sam.RH.version = 2.0;
 					break;
 			}
 		} else if (PlayerZ + 1 == ClimbingPlayerTileZ) {
-			this.Sam_RH_ClimbUp();
+			Game_CharacterBase.prototype.Sam_RH_ClimbUp();
 		} else if (
 			PlayerZ >= LookingPlayerTileZ &&
 			LookingPlayerTile().id != 0
 		) {
-			switch (this._direction) {
+			switch ($gamePlayer.direction()) {
 				case 4:
 					Sam.RH.moveRouteJump(-1, 0);
 					break;
@@ -1198,13 +1211,13 @@ Sam.RH.version = 2.0;
 	};
 
 	// Climb Up
-	Game_CharacterBase.prototype.Sam_RH_ClimbUp = function() {
+	Game_CharacterBase.prototype.Sam_RH_ClimbUp = () => {
 		var PlayerZ = PlayerTile().z;
 		var dZ = LookingPlayerTile().z - PlayerZ;
 		var adZ = Math.abs(dZ);
 
 		if (PlayerZ + 1 == ClimbingPlayerTile().z && (adZ != 0 || adZ != 0.5)) {
-			switch (this._direction) {
+			switch ($gamePlayer.direction()) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1, false);
 					break;
@@ -1222,7 +1235,7 @@ Sam.RH.version = 2.0;
 	};
 
 	// Fall Down
-	Game_CharacterBase.prototype.Sam_RH_FallDown = function() {
+	Game_CharacterBase.prototype.Sam_RH_FallDown = () => {
 		console.log("Sam_RH_FallDown");
 
 		var PlayerZ = PlayerTile().z;
@@ -1230,7 +1243,7 @@ Sam.RH.version = 2.0;
 		var FallingPlayerTileZ = FallingPlayerTile().z;
 
 		if (PlayerZ > LookingPlayerTileZ) {
-			switch (this._direction) {
+			switch ($gamePlayer.direction()) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1);
 					break;
@@ -1239,7 +1252,7 @@ Sam.RH.version = 2.0;
 					break;
 			}
 			if (PlayerZ > FallingPlayerTileZ) {
-				switch (this._direction) {
+				switch ($gamePlayer.direction()) {
 					case 4:
 						Sam.RH.moveRouteJump(-1, 0);
 						break;
@@ -1252,7 +1265,7 @@ Sam.RH.version = 2.0;
 	};
 
 	// Dash
-	Game_CharacterBase.prototype.Sam_RH_Dash = function() {
+	Game_CharacterBase.prototype.Sam_RH_Dash = () => {
 		var PlayerZ = PlayerTile().z;
 		var LookingPlayerTileZ = LookingPlayerTile().z;
 		var ClimbingPlayerTileZ = ClimbingPlayerTile().z;
@@ -1260,11 +1273,11 @@ Sam.RH.version = 2.0;
 
 		if (
 			PlayerZ + 0.5 >= LookingPlayerTileZ &&
-			(LookingPlayerTile().id != 0 || this._direction == 2)
+			(LookingPlayerTile().id != 0 || $gamePlayer.direction() == 2)
 		) {
 			if (
 				PlayerZ + 0.5 >= JumpingPlayerTileZ &&
-				(JumpingPlayerTile().id != 0 || this._direction == 2)
+				(JumpingPlayerTile().id != 0 || $gamePlayer.direction() == 2)
 			) {
 				Sam.RH.moveRouteDash(2);
 			} else {
@@ -1276,12 +1289,12 @@ Sam.RH.version = 2.0;
 	};
 
 	// TileZ
-	Game_CharacterBase.prototype.Sam_RH_Tile = function(x, y) {
+	Game_CharacterBase.prototype.Sam_RH_Tile = (x, y) => {
 		return setTile(x, y);
 	};
 
 	// GET INFO
-	Game_CharacterBase.prototype.Sam_RH_getInfo = function() {
+	Game_CharacterBase.prototype.Sam_RH_getInfo = () => {
 		console.log(
 			"PlayerTile: (" +
 				String(PlayerTile().x) +
@@ -1342,7 +1355,7 @@ Sam.RH.version = 2.0;
 	// =============================================================================
 
 	// Sam.RH.Game_Character_update = Game_Character.prototype.update;
-	// Game_Character.prototype.update = function(sceneActive) {
+	// Game_Character.prototype.update = (sceneActive) => {
 	// 	Sam.RH.Game_Character_update.call(this,sceneActive);
 	// 	if (this._isDashing){
 	// 		$gameActors.actor(1).setCharacterImage($gamePlayer.characterName(), Sam.RH.Anim_Dash);
@@ -1356,7 +1369,7 @@ Sam.RH.version = 2.0;
 
 	Sam.RH.Game_Interpreter_pluginCommand =
 		Game_Interpreter.prototype.pluginCommand;
-	Game_Interpreter.prototype.pluginCommand = function(command, args) {
+	Game_Interpreter.prototype.pluginCommand = (command, args) => {
 		Sam.RH.Game_Interpreter_pluginCommand.call(this, command, args);
 
 		if (command == "Sam_RH_Jump") {
