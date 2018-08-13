@@ -885,7 +885,7 @@ Sam.RH.version = 3.0;
 		if (fall) {
 			var playerZ = beforeJumpTile.z;
 			if ($gamePlayer.direction() == 8) {
-				if (playerZ > afterFallTile.NearbyTile(2).z) {
+				if (playerZ > afterFallTile.NearbyTile(2).z && playerZ > afterFallTile.z) {
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
@@ -896,7 +896,6 @@ Sam.RH.version = 3.0;
 					(playerZ > afterFallTile.NearbyTile(2).z &&
 						playerZ > afterFallTile.z)
 				) {
-					console.log("Oui");
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
@@ -911,9 +910,6 @@ Sam.RH.version = 3.0;
 						break;
 					}
 				}
-				console.log(playerZ);
-				console.log(afterFallTile);
-				console.log("out");
 			}
 		}
 
