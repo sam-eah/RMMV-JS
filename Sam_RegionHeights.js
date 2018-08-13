@@ -695,15 +695,13 @@ Sam.RH.version = 3.0;
 	// Ground Change
 	// =============================================================================
 
-	Sam.RH.GroundChange = (tile1, tile2) => {
-		var TileG1 = tile1.g;
-		var TileG2 = tile2.g;
+	Sam.RH.GroundChange = (tileG1, tileG2) => {
 
-		if (TileG1 != TileG2) {
-			console.log("ground changed from " + TileG1 + " To " + TileG2);
+		if (tileG1 != tileG2) {
+			console.log("ground changed from " + tileG1 + " To " + tileG2);
 
 			var CommonEventId1 = Number(
-				Sam.RH.parameters["Ground Change From " + TileG1]
+				Sam.RH.parameters["Ground Change From " + tileG1]
 			);
 			if (CommonEventId1 != 0) {
 				console.log("call", CommonEventId1);
@@ -711,7 +709,7 @@ Sam.RH.version = 3.0;
 			}
 
 			var CommonEventId2 = Number(
-				Sam.RH.parameters["Ground Change To " + TileG2]
+				Sam.RH.parameters["Ground Change To " + tileG2]
 			);
 			if (CommonEventId2 != 0) {
 				console.log("call", CommonEventId2);
@@ -783,7 +781,7 @@ Sam.RH.version = 3.0;
 			Game_Player.prototype.isThrough() ||
 			Game_Player.prototype.isDebugThrough()
 		) {
-			Sam.RH.GroundChange(tile1, tile2);
+			Sam.RH.GroundChange(tile1.g, tile2.g);
 			return true;
 		}
 
@@ -810,7 +808,7 @@ Sam.RH.version = 3.0;
 			}
 		}
 
-		Sam.RH.GroundChange(tile1, tile2);
+		Sam.RH.GroundChange(tile1.g, tile2.g);
 		return true;
 	};
 
@@ -915,14 +913,14 @@ Sam.RH.version = 3.0;
 		]);
 
 		// Change Ground Common Events
-		var TileG1 = beforeJumpTile.g;
-		var TileG2 = afterFallTile.g;
+		var tileG1 = beforeJumpTile.g;
+		var tileG2 = afterFallTile.g;
 
-		if (TileG1 != TileG2) {
-			console.log("ground changed from " + TileG1 + " To " + TileG2);
+		if (tileG1 != tileG2) {
+			console.log("ground changed from " + tileG1 + " To " + tileG2);
 
 			var CommonEventId1 = Number(
-				Sam.RH.parameters["Ground Change From " + TileG1]
+				Sam.RH.parameters["Ground Change From " + tileG1]
 			);
 			if (CommonEventId1 != 0) {
 				moveRoute.list = moveRoute.list.concat([
@@ -938,7 +936,7 @@ Sam.RH.version = 3.0;
 			}
 
 			var CommonEventId2 = Number(
-				Sam.RH.parameters["Ground Change To " + TileG2]
+				Sam.RH.parameters["Ground Change To " + tileG2]
 			);
 			if (CommonEventId2 != 0) {
 				moveRoute.list = moveRoute.list.concat([
@@ -1082,14 +1080,14 @@ Sam.RH.version = 3.0;
 		]);
 
 		// Change Ground Common Events
-		var TileG1 = beforeDashTile.g;
-		var TileG2 = afterFallTile.g;
+		var tileG1 = beforeDashTile.g;
+		var tileG2 = afterFallTile.g;
 
-		if (TileG1 != TileG2) {
-			console.log("ground changed from " + TileG1 + " To " + TileG2);
+		if (tileG1 != tileG2) {
+			console.log("ground changed from " + tileG1 + " To " + tileG2);
 
 			var CommonEventId1 = Number(
-				Sam.RH.parameters["Ground Change From " + TileG1]
+				Sam.RH.parameters["Ground Change From " + tileG1]
 			);
 			if (CommonEventId1 != 0) {
 				moveRoute.list = moveRoute.list.concat([
@@ -1105,7 +1103,7 @@ Sam.RH.version = 3.0;
 			}
 
 			var CommonEventId2 = Number(
-				Sam.RH.parameters["Ground Change To " + TileG2]
+				Sam.RH.parameters["Ground Change To " + tileG2]
 			);
 			if (CommonEventId2 != 0) {
 				moveRoute.list = moveRoute.list.concat([
