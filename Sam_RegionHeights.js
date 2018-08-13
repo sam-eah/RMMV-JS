@@ -883,6 +883,9 @@ Sam.RH.version = 3.0;
 					]);
 				}
 			} else {
+				console.log(playerZ);
+				console.log(beforeJumpTile);
+				console.log(afterJumpTile);
 				while (
 					afterFallTile.id == 0 ||
 					(playerZ > afterFallTile.NearbyTile(2).z &&
@@ -1140,7 +1143,7 @@ Sam.RH.version = 3.0;
 	// Game_CharacterBase
 	// =============================================================================
 
-	Game_CharacterBase.prototype.Sam_RH_Jump = () => {
+	Game_CharacterBase.prototype.Sam_RH_Jump = function() {
 		var playerTile = getPlayerTile();
 		var lookingPlayerTile = getLookingPlayerTile();
 		var climbingPlayerTile = getClimbingPlayerTile();
@@ -1153,7 +1156,7 @@ Sam.RH.version = 3.0;
 			) {
 				Sam.RH.moveRouteJump(0, 2);
 			} else if (playerTile.z + 1 == climbingPlayerTile.z) {
-				Game_CharacterBase.prototype.Sam_RH_ClimbUp();
+				this.Sam_RH_ClimbUp();
 			} else if (playerTile.z >= lookingPlayerTile.z) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
@@ -1175,7 +1178,7 @@ Sam.RH.version = 3.0;
 					break;
 			}
 		} else if (playerTile.z + 1 == climbingPlayerTile.z) {
-			Game_CharacterBase.prototype.Sam_RH_ClimbUp();
+			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z >= lookingPlayerTile.z &&
 			lookingPlayerTile.id != 0
@@ -1197,7 +1200,7 @@ Sam.RH.version = 3.0;
 	};
 
 	// Climb Up
-	Game_CharacterBase.prototype.Sam_RH_ClimbUp = () => {
+	Game_CharacterBase.prototype.Sam_RH_ClimbUp = function() {
 		var playerTile = getPlayerTile();
 		var lookingPlayerTile = getLookingPlayerTile();
 		var climbingPlayerTile = getClimbingPlayerTile();
@@ -1225,7 +1228,7 @@ Sam.RH.version = 3.0;
 	};
 
 	// Fall Down
-	Game_CharacterBase.prototype.Sam_RH_FallDown = () => {
+	Game_CharacterBase.prototype.Sam_RH_FallDown = function() {
 		console.log("Sam_RH_FallDown");
 
 		var playerTile = getPlayerTile();
@@ -1255,7 +1258,7 @@ Sam.RH.version = 3.0;
 	};
 
 	// Dash
-	Game_CharacterBase.prototype.Sam_RH_Dash = () => {
+	Game_CharacterBase.prototype.Sam_RH_Dash = function() {
 		var playerTile = getPlayerTile();
 		var lookingPlayerTile = getLookingPlayerTile();
 		var jumpingPlayerTile = getJumpingPlayerTile();
@@ -1278,12 +1281,12 @@ Sam.RH.version = 3.0;
 	};
 
 	// TileZ
-	Game_CharacterBase.prototype.Sam_RH_Tile = (x, y) => {
+	Game_CharacterBase.prototype.Sam_RH_Tile = function(x, y) {
 		return getTile(x, y);
 	};
 
 	// GET INFO
-	Game_CharacterBase.prototype.Sam_RH_getInfo = () => {
+	Game_CharacterBase.prototype.Sam_RH_getInfo = function() {
 		console.log("PlayerTile:");
 		console.log(getPlayerTile());
 		console.log("LookingPlayerTile:");
@@ -1315,7 +1318,7 @@ Sam.RH.version = 3.0;
 
 	Sam.RH.Game_Interpreter_pluginCommand =
 		Game_Interpreter.prototype.pluginCommand;
-	Game_Interpreter.prototype.pluginCommand = (command, args) => {
+	Game_Interpreter.prototype.pluginCommand = function(command, args) {
 		Sam.RH.Game_Interpreter_pluginCommand.call(this, command, args);
 
 		if (command == "Sam_RH_Jump") {
