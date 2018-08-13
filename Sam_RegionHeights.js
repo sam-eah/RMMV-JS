@@ -554,22 +554,22 @@ Sam.RH.version = 3.0;
 		NearbyTile(d) {
 			var dx = directionXY(d).x;
 			var dy = directionXY(d).y;
-			return setTile(this.x + dx, this.y + dy);
+			return getTile(this.x + dx, this.y + dy);
 		}
 
 		JumpingTile(d) {
 			switch (d) {
 				case 2:
-					return setTile(this.x, this.y + 2);
+					return getTile(this.x, this.y + 2);
 					break;
 				case 4:
-					return setTile(this.x - 2, this.y);
+					return getTile(this.x - 2, this.y);
 					break;
 				case 6:
-					return setTile(this.x + 2, this.y);
+					return getTile(this.x + 2, this.y);
 					break;
 				case 8:
-					return setTile(this.x, this.y - 2);
+					return getTile(this.x, this.y - 2);
 					break;
 			}
 		}
@@ -618,35 +618,35 @@ Sam.RH.version = 3.0;
 	}
 
 	// =============================================================================
-	// setTile
+	// getTile
 	// =============================================================================
 
-	const setTile = (x, y) => {
+	const getTile = (x, y) => {
 		return new Tile(x, y);
 	};
 
-	const PlayerTile = () => {
-		return setTile($gamePlayer.x, $gamePlayer.y);
+	const getPlayerTile = () => {
+		return getTile($gamePlayer.x, $gamePlayer.y);
 	};
 
-	const NearbyPlayerTile = d => {
-		return PlayerTile().NearbyTile(d);
+	const getNearbyPlayerTile = d => {
+		return getPlayerTile().NearbyTile(d);
 	};
 
-	const LookingPlayerTile = () => {
-		return NearbyPlayerTile($gamePlayer.direction());
+	const getLookingPlayerTile = () => {
+		return getNearbyPlayerTile($gamePlayer.direction());
 	};
 
-	const JumpingPlayerTile = () => {
-		return PlayerTile().JumpingTile($gamePlayer.direction());
+	const getJumpingPlayerTile = () => {
+		return getPlayerTile().JumpingTile($gamePlayer.direction());
 	};
 
-	const ClimbingPlayerTile = () => {
-		return PlayerTile().ClimbingTile($gamePlayer.direction());
+	const getClimbingPlayerTile = () => {
+		return getPlayerTile().ClimbingTile($gamePlayer.direction());
 	};
 
-	const FallingPlayerTile = () => {
-		return PlayerTile().FallingTile($gamePlayer.direction());
+	const getFallingPlayerTile = () => {
+		return getPlayerTile().FallingTile($gamePlayer.direction());
 	};
 
 	// =============================================================================
@@ -703,9 +703,9 @@ Sam.RH.version = 3.0;
 	// Ground Change
 	// =============================================================================
 
-	Sam.RH.GroundChange = (Tile1, Tile2) => {
-		var TileG1 = Tile1.g;
-		var TileG2 = Tile2.g;
+	Sam.RH.GroundChange = (tile1, tile2) => {
+		var TileG1 = tile1.g;
+		var TileG2 = tile2.g;
 
 		if (TileG1 != TileG2) {
 			console.log("ground changed from " + TileG1 + " To " + TileG2);
@@ -744,31 +744,22 @@ Sam.RH.version = 3.0;
 	};
 
 	Game_Player.prototype.Sam_RH_canPass = (x, y, d) => {
-		var Tile1 = setTile(x, y);
-		var Tile2 = setTile(
+		var tile1 = getTile(x, y);
+		var tile2 = getTile(
 			$gameMap.roundXWithDirection(x, d),
 			$gameMap.roundYWithDirection(y, d)
 		);
 
-		var TileId1 = Tile1.id;
-		var TileId2 = Tile2.id;
-
-		var TileZ1 = Tile1.z;
-		var TileZ2 = Tile2.z;
-
-		var TileG1 = Tile1.g;
-		var TileG2 = Tile2.g;
-
 		// Calculate height (z) difference
-		var dZ = TileZ2 - TileZ1;
-		var adId = Math.abs(TileId2 - TileId1);
+		var dZ = tile2.z - tile1.z;
+		var adId = Math.abs(tile2.id - tile1.id);
 		// dZ = 0 : same height
 		// adZ = .5 : stairs
 
 		// AutoClimb
-		if (TileZ2 != TileZ1) {
-			if (adId != 5 && (TileG1 != 9 && TileG2 != 9)) {
-				if (TileId1 != 0) {
+		if (tile2.z != tile1.z) {
+			if (adId != 5 && (tile1.g != 9 && tile2.g != 9)) {
+				if (tile1.id != 0) {
 					if (Sam.RH.AutoClimb) {
 						$gamePlayer.setDirection(d);
 						$gamePlayer.Sam_RH_ClimbUp();
@@ -792,7 +783,7 @@ Sam.RH.version = 3.0;
 		// 	}
 		// }
 
-		if (!$gameMap.isValid(Tile2.x, Tile2.y)) {
+		if (!$gameMap.isValid(tile2.x, tile2.y)) {
 			return false;
 		}
 
@@ -800,22 +791,22 @@ Sam.RH.version = 3.0;
 			Game_Player.prototype.isThrough() ||
 			Game_Player.prototype.isDebugThrough()
 		) {
-			Sam.RH.GroundChange(Tile1, Tile2);
+			Sam.RH.GroundChange(tile1, tile2);
 			return true;
 		}
 
-		if (TileId2 == 255) {
+		if (tile2.id == 255) {
 			return false;
 		}
-		if (Game_Player.prototype.isCollidedWithCharacters(Tile2.x, Tile2.y)) {
-			return false;
-		}
-
-		if (TileZ2 == 0 && d != 2) {
+		if (Game_Player.prototype.isCollidedWithCharacters(tile2.x, tile2.y)) {
 			return false;
 		}
 
-		if (adId != 5 && (TileG1 != 9 && TileG2 != 9)) {
+		if (tile2.z == 0 && d != 2) {
+			return false;
+		}
+
+		if (adId != 5 && (tile1.g != 9 && tile2.g != 9)) {
 			if (dZ != 0) {
 				if (dZ < 0) {
 					if (Sam.RH.AutoFall) {
@@ -827,7 +818,7 @@ Sam.RH.version = 3.0;
 			}
 		}
 
-		Sam.RH.GroundChange(Tile1, Tile2);
+		Sam.RH.GroundChange(tile1, tile2);
 		return true;
 	};
 
@@ -836,8 +827,8 @@ Sam.RH.version = 3.0;
 	// =============================================================================
 
 	Sam.RH.moveRouteJump = (jumpx, jumpy, fall = true) => {
-		var beforeJumpTile = PlayerTile();
-		var afterJumpTile = setTile(
+		var beforeJumpTile = getPlayerTile();
+		var afterJumpTile = getTile(
 			beforeJumpTile.x + jumpx,
 			beforeJumpTile.y + jumpy
 		);
@@ -885,7 +876,8 @@ Sam.RH.version = 3.0;
 		if (fall) {
 			var playerZ = beforeJumpTile.z;
 			if ($gamePlayer.direction() == 8) {
-				if (playerZ > afterFallTile.NearbyTile(2).z && playerZ > afterFallTile.z) {
+				if (playerZ > afterFallTile.NearbyTile(2).z && 
+					playerZ > afterFallTile.z) {
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
@@ -894,21 +886,20 @@ Sam.RH.version = 3.0;
 				while (
 					afterFallTile.id == 0 ||
 					(playerZ > afterFallTile.NearbyTile(2).z &&
-						playerZ > afterFallTile.z)
+					playerZ > afterFallTile.z)
 				) {
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
-					afterFallTile = setTile(
+					afterFallTile = getTile(
 						afterFallTile.x,
 						afterFallTile.y + 1
 					);
 					playerZ -= 1;
+					console.log(playerZ);
+					console.log(afterFallTile);
 
-					if (playerZ < 0) {
-						console.log("break");
-						break;
-					}
+					if (playerZ < 0) break;
 				}
 			}
 		}
@@ -985,12 +976,12 @@ Sam.RH.version = 3.0;
 	Sam.RH.moveRouteDash = dash => {
 		console.log(dash);
 
-		var beforeDashTile = PlayerTile();
+		var beforeDashTile = getPlayerTile();
 		var afterDashTile = beforeDashTile;
 		if (dash == 1) {
-			afterDashTile = LookingPlayerTile();
+			afterDashTile = getLookingPlayerTile();
 		} else if (dash == 2) {
-			afterDashTile = JumpingPlayerTile();
+			afterDashTile = getJumpingPlayerTile();
 		}
 		var afterFallTile = afterDashTile;
 
@@ -1066,14 +1057,14 @@ Sam.RH.version = 3.0;
 			}
 		} else {
 			while (
-				PlayerTile().id == 0 ||
+				getPlayerTile().id == 0 ||
 				(playerZ > afterFallTile.NearbyTile(2).z &&
 					playerZ > afterFallTile.z)
 			) {
 				moveRoute.list = moveRoute.list.concat([
 					{ code: Game_Character.ROUTE_MOVE_DOWN }
 				]);
-				afterFallTile = setTile(afterFallTile.x, afterFallTile.y + 1);
+				afterFallTile = getTile(afterFallTile.x, afterFallTile.y + 1);
 				playerZ -= 1;
 
 				if (playerZ < 0) break;
@@ -1150,28 +1141,27 @@ Sam.RH.version = 3.0;
 	// =============================================================================
 
 	Game_CharacterBase.prototype.Sam_RH_Jump = () => {
-		var PlayerZ = PlayerTile().z;
-		var LookingPlayerTileZ = LookingPlayerTile().z;
-		var ClimbingPlayerTileZ = ClimbingPlayerTile().z;
-		var JumpingPlayerTileZ = JumpingPlayerTile().z;
-		console.log(JumpingPlayerTileZ);
+		var playerTile = getPlayerTile();
+		var lookingPlayerTile = getLookingPlayerTile();
+		var climbingPlayerTile = getClimbingPlayerTile();
+		var jumpingPlayerTile = getJumpingPlayerTile();
 
 		if ($gamePlayer.direction() == 2) {
 			if (
-				PlayerZ >= JumpingPlayerTileZ &&
-				PlayerZ + 1 >= ClimbingPlayerTileZ
+				playerTile.z >= jumpingPlayerTile.z &&
+				playerTile.z + 1 >= climbingPlayerTile.z
 			) {
 				Sam.RH.moveRouteJump(0, 2);
-			} else if (PlayerZ + 1 == ClimbingPlayerTileZ) {
+			} else if (playerTile.z + 1 == climbingPlayerTile.z) {
 				Game_CharacterBase.prototype.Sam_RH_ClimbUp();
-			} else if (PlayerZ >= LookingPlayerTileZ) {
+			} else if (playerTile.z >= lookingPlayerTile.z) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
 				Sam.RH.moveRouteJump(0, 0);
 			}
 		} else if (
-			PlayerZ + 0.5 >= JumpingPlayerTileZ &&
-			JumpingPlayerTile().id != 0
+			playerTile.z + 0.5 >= jumpingPlayerTile.z &&
+			jumpingPlayerTile.id != 0
 		) {
 			switch ($gamePlayer.direction()) {
 				case 4:
@@ -1184,11 +1174,11 @@ Sam.RH.version = 3.0;
 					Sam.RH.moveRouteJump(0, -2);
 					break;
 			}
-		} else if (PlayerZ + 1 == ClimbingPlayerTileZ) {
+		} else if (playerTile.z + 1 == climbingPlayerTile.z) {
 			Game_CharacterBase.prototype.Sam_RH_ClimbUp();
 		} else if (
-			PlayerZ >= LookingPlayerTileZ &&
-			LookingPlayerTile().id != 0
+			playerTile.z >= lookingPlayerTile.z &&
+			lookingPlayerTile.id != 0
 		) {
 			switch ($gamePlayer.direction()) {
 				case 4:
@@ -1208,11 +1198,15 @@ Sam.RH.version = 3.0;
 
 	// Climb Up
 	Game_CharacterBase.prototype.Sam_RH_ClimbUp = () => {
-		var PlayerZ = PlayerTile().z;
-		var dZ = LookingPlayerTile().z - PlayerZ;
+		var playerTile = getPlayerTile();
+		var lookingPlayerTile = getLookingPlayerTile();
+		var climbingPlayerTile = getClimbingPlayerTile();
+
+		var dZ = lookingPlayerTile.z - playerTile.z;
 		var adZ = Math.abs(dZ);
 
-		if (PlayerZ + 1 == ClimbingPlayerTile().z && (adZ != 0 || adZ != 0.5)) {
+		if (playerTile.z + 1 == climbingPlayerTile.z && 
+			(adZ != 0 || adZ != 0.5)) {
 			switch ($gamePlayer.direction()) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1, false);
@@ -1234,11 +1228,11 @@ Sam.RH.version = 3.0;
 	Game_CharacterBase.prototype.Sam_RH_FallDown = () => {
 		console.log("Sam_RH_FallDown");
 
-		var PlayerZ = PlayerTile().z;
-		var LookingPlayerTileZ = LookingPlayerTile().z;
-		var FallingPlayerTileZ = FallingPlayerTile().z;
+		var playerTile = getPlayerTile();
+		var lookingPlayerTile = getLookingPlayerTile();
+		var fallingPlayerTile = getFallingPlayerTile();
 
-		if (PlayerZ > LookingPlayerTileZ) {
+		if (playerTile.z > lookingPlayerTile.z) {
 			switch ($gamePlayer.direction()) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1);
@@ -1247,7 +1241,7 @@ Sam.RH.version = 3.0;
 					Sam.RH.moveRouteJump(0, -1, false);
 					break;
 			}
-			if (PlayerZ > FallingPlayerTileZ) {
+			if (playerTile.z > fallingPlayerTile.z) {
 				switch ($gamePlayer.direction()) {
 					case 4:
 						Sam.RH.moveRouteJump(-1, 0);
@@ -1262,18 +1256,17 @@ Sam.RH.version = 3.0;
 
 	// Dash
 	Game_CharacterBase.prototype.Sam_RH_Dash = () => {
-		var PlayerZ = PlayerTile().z;
-		var LookingPlayerTileZ = LookingPlayerTile().z;
-		var ClimbingPlayerTileZ = ClimbingPlayerTile().z;
-		var JumpingPlayerTileZ = JumpingPlayerTile().z;
+		var playerTile = getPlayerTile();
+		var lookingPlayerTile = getLookingPlayerTile();
+		var jumpingPlayerTile = getJumpingPlayerTile();
 
 		if (
-			PlayerZ + 0.5 >= LookingPlayerTileZ &&
-			(LookingPlayerTile().id != 0 || $gamePlayer.direction() == 2)
+			playerTile.z + 0.5 >= lookingPlayerTile.z &&
+			(lookingPlayerTile.id != 0 || $gamePlayer.direction() == 2)
 		) {
 			if (
-				PlayerZ + 0.5 >= JumpingPlayerTileZ &&
-				(JumpingPlayerTile().id != 0 || $gamePlayer.direction() == 2)
+				playerTile.z + 0.5 >= jumpingPlayerTile.z &&
+				(jumpingPlayerTile.id != 0 || $gamePlayer.direction() == 2)
 			) {
 				Sam.RH.moveRouteDash(2);
 			} else {
@@ -1286,64 +1279,21 @@ Sam.RH.version = 3.0;
 
 	// TileZ
 	Game_CharacterBase.prototype.Sam_RH_Tile = (x, y) => {
-		return setTile(x, y);
+		return getTile(x, y);
 	};
 
 	// GET INFO
 	Game_CharacterBase.prototype.Sam_RH_getInfo = () => {
-		console.log(
-			"PlayerTile: (" +
-				String(PlayerTile().x) +
-				", " +
-				String(PlayerTile().y) +
-				") " +
-				"d: " +
-				String($gamePlayer.direction()) +
-				", " +
-				String(PlayerTile().id) +
-				", " +
-				String(PlayerTile().z)
-		);
-		console.log(
-			"LookingPlayerTile: " +
-				String(LookingPlayerTile().x) +
-				", " +
-				String(LookingPlayerTile().y) +
-				", " +
-				String(LookingPlayerTile().id) +
-				", " +
-				String(LookingPlayerTile().z)
-		);
-		console.log(
-			"JumpingPlayerTile: " +
-				String(JumpingPlayerTile().x) +
-				", " +
-				String(JumpingPlayerTile().y) +
-				", " +
-				String(JumpingPlayerTile().id) +
-				", " +
-				String(JumpingPlayerTile().z)
-		);
-		console.log(
-			"ClimbingPlayerTile: " +
-				String(ClimbingPlayerTile().x) +
-				", " +
-				String(ClimbingPlayerTile().y) +
-				", " +
-				String(ClimbingPlayerTile().id) +
-				", " +
-				String(ClimbingPlayerTile().z)
-		);
-		console.log(
-			"FallingPlayerTile: " +
-				String(FallingPlayerTile().x) +
-				", " +
-				String(FallingPlayerTile().y) +
-				", " +
-				String(FallingPlayerTile().id) +
-				", " +
-				String(FallingPlayerTile().z)
-		);
+		console.log("PlayerTile:");
+		console.log(getPlayerTile());
+		console.log("LookingPlayerTile:");
+		console.log(getLookingPlayerTile());
+		console.log("JumpingPlayerTile:");
+		console.log(getJumpingPlayerTile());
+		console.log("ClimbingPlayerTile:");
+		console.log(getClimbingPlayerTile());
+		console.log("FallingPlayerTile:");
+		console.log(getFallingPlayerTile());
 	};
 
 	// =============================================================================
