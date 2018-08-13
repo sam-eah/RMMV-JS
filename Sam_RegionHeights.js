@@ -463,20 +463,12 @@ Sam.RH.version = 3.0;
  * plugin command : Sam_RH_ClimbUp
  *
  *
- * /// REGION Z ///
+ * /// TILE ///
  *
- * desc :           Get the height of the region
+ * desc :           Get tile info
  *
- * script :         $gamePlayer.Sam_RH_RegionZ(x, y);
- * plugin command : Sam_RH_RegionZ x y
- *
- *
- * /// REGION G ///
- *
- * desc :           Get the height of the region
- *
- * script :         $gamePlayer.Sam_RH_RegionG(x, y);
- * plugin command : Sam_RH_RegionG x y
+ * script :         $gamePlayer.Sam_RH_getTile(x, y);
+ * plugin command : Sam_RH_getTile x y
  *
  *
  * /// GET INFO ///
@@ -1281,7 +1273,7 @@ Sam.RH.version = 3.0;
 	};
 
 	// TileZ
-	Game_CharacterBase.prototype.Sam_RH_Tile = function(x, y) {
+	Game_CharacterBase.prototype.Sam_RH_getTile = function(x, y) {
 		return getTile(x, y);
 	};
 
@@ -1337,12 +1329,8 @@ Sam.RH.version = 3.0;
 			$gamePlayer.Sam_RH_Dash();
 		}
 
-		if (command == "Sam_RH_TileZ") {
-			$gamePlayer.Sam_RH_TileZ(args[0], args[1]);
-		}
-
-		if (command == "Sam_RH_TileG") {
-			$gamePlayer.Sam_RH_TileG(args[0], args[1]);
+		if (command == "Sam_RH_getTile") {
+			$gamePlayer.Sam_RH_getTile(args[0], args[1]);
 		}
 
 		if (command == "Sam_RH_getInfo") {
