@@ -696,7 +696,6 @@ Sam.RH.version = 3.0;
 	// =============================================================================
 
 	Sam.RH.GroundChange = (tileG1, tileG2) => {
-
 		if (tileG1 != tileG2) {
 			console.log("ground changed from " + tileG1 + " To " + tileG2);
 
@@ -724,21 +723,31 @@ Sam.RH.version = 3.0;
 
 	// OVERWRITE
 	if (Sam.RH.OverWrite) {
-		Game_Player.prototype.canPass = (x, y, d) => {
+		Game_Player.prototype.canPass = function(x, y, d) {
 			return Game_Player.prototype.Sam_RH_canPass(x, y, d);
 		};
 	}
 
-	Game_Player.prototype.canPassTile = (x, y) => {
-		return Game_Player.prototype.Sam_RH_canPass($gamePlayer.direction());
+	Game_Player.prototype.canPassTile = function(x, y) {
+		return this.Sam_RH_canPass($gamePlayer.direction());
 	};
 
-	Game_Player.prototype.Sam_RH_canPass = (x, y, d) => {
+	Game_Player.prototype.Sam_RH_canPass = function(x, y, d) {
+		// return true;
+		// console.log("canPass ?");
 		var tile1 = getTile(x, y);
 		var tile2 = getTile(
 			$gameMap.roundXWithDirection(x, d),
 			$gameMap.roundYWithDirection(y, d)
 		);
+
+		if (
+			this.isThrough() ||
+			this.isDebugThrough()
+		) {
+			Sam.RH.GroundChange(tile1.g, tile2.g);
+			return true;
+		}
 
 		// Calculate height (z) difference
 		var dZ = tile2.z - tile1.z;
@@ -777,18 +786,10 @@ Sam.RH.version = 3.0;
 			return false;
 		}
 
-		if (
-			Game_Player.prototype.isThrough() ||
-			Game_Player.prototype.isDebugThrough()
-		) {
-			Sam.RH.GroundChange(tile1.g, tile2.g);
-			return true;
-		}
-
 		if (tile2.id == 255) {
 			return false;
 		}
-		if (Game_Player.prototype.isCollidedWithCharacters(tile2.x, tile2.y)) {
+		if (this.isCollidedWithCharacters(tile2.x, tile2.y)) {
 			return false;
 		}
 
@@ -866,20 +867,23 @@ Sam.RH.version = 3.0;
 		if (fall) {
 			var playerZ = beforeJumpTile.z;
 			if ($gamePlayer.direction() == 8) {
-				if (playerZ > afterFallTile.NearbyTile(2).z && 
-					playerZ > afterFallTile.z) {
+				if (
+					playerZ > afterFallTile.NearbyTile(2).z &&
+					playerZ > afterFallTile.z
+				) {
 					moveRoute.list = moveRoute.list.concat([
+						{ code: Game_Character.ROUTE_THROUGH_ON },
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
 				}
 			} else {
-				console.log(playerZ);
-				console.log(beforeJumpTile);
-				console.log(afterJumpTile);
+				console.log("playerZ", playerZ);
+				console.log("beforeJumpTile", beforeJumpTile);
+				console.log("afterJumpTile", afterJumpTile);
 				while (
 					afterFallTile.id == 0 ||
 					(playerZ > afterFallTile.NearbyTile(2).z &&
-					playerZ > afterFallTile.z)
+						playerZ > afterFallTile.z)
 				) {
 					moveRoute.list = moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
@@ -889,8 +893,8 @@ Sam.RH.version = 3.0;
 						afterFallTile.y + 1
 					);
 					playerZ -= 1;
-					console.log(playerZ);
-					console.log(afterFallTile);
+					console.log("playerZ", playerZ);
+					console.log("afterFallTile", afterFallTile);
 
 					if (playerZ < 0) break;
 				}
@@ -1198,8 +1202,10 @@ Sam.RH.version = 3.0;
 		var dZ = lookingPlayerTile.z - playerTile.z;
 		var adZ = Math.abs(dZ);
 
-		if (playerTile.z + 1 == climbingPlayerTile.z && 
-			(adZ != 0 || adZ != 0.5)) {
+		if (
+			playerTile.z + 1 == climbingPlayerTile.z &&
+			(adZ != 0 || adZ != 0.5)
+		) {
 			switch ($gamePlayer.direction()) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1, false);
