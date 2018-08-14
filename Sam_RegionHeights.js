@@ -724,7 +724,7 @@ Sam.RH.version = 3.0;
 	// OVERWRITE
 	if (Sam.RH.OverWrite) {
 		Game_Player.prototype.canPass = function(x, y, d) {
-			return Game_Player.prototype.Sam_RH_canPass(x, y, d);
+			return this.Sam_RH_canPass(x, y, d);
 		};
 	}
 
