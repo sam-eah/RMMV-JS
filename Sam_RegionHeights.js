@@ -544,8 +544,8 @@ Sam.RH.version = 3.0;
 		}
 
 		NearbyTile(d) {
-			var dx = directionXY(d).x;
-			var dy = directionXY(d).y;
+			const dx = directionXY(d).x;
+			const dy = directionXY(d).y;
 			return getTile(this.x + dx, this.y + dy);
 		}
 
@@ -699,7 +699,7 @@ Sam.RH.version = 3.0;
 		if (tileG1 != tileG2) {
 			console.log("ground changed from " + tileG1 + " To " + tileG2);
 
-			var CommonEventId1 = Number(
+			const CommonEventId1 = Number(
 				Sam.RH.parameters["Ground Change From " + tileG1]
 			);
 			if (CommonEventId1 != 0) {
@@ -707,7 +707,7 @@ Sam.RH.version = 3.0;
 				$gameTemp.reserveCommonEvent(CommonEventId1);
 			}
 
-			var CommonEventId2 = Number(
+			const CommonEventId2 = Number(
 				Sam.RH.parameters["Ground Change To " + tileG2]
 			);
 			if (CommonEventId2 != 0) {
@@ -735,23 +735,20 @@ Sam.RH.version = 3.0;
 	Game_Player.prototype.Sam_RH_canPass = function(x, y, d) {
 		// return true;
 		// console.log("canPass ?");
-		var tile1 = getTile(x, y);
-		var tile2 = getTile(
+		const tile1 = getTile(x, y);
+		const tile2 = getTile(
 			$gameMap.roundXWithDirection(x, d),
 			$gameMap.roundYWithDirection(y, d)
 		);
 
-		if (
-			this.isThrough() ||
-			this.isDebugThrough()
-		) {
+		if ($gamePlayer.isThrough() || $gamePlayer.isDebugThrough()) {
 			Sam.RH.GroundChange(tile1.g, tile2.g);
 			return true;
 		}
 
 		// Calculate height (z) difference
-		var dZ = tile2.z - tile1.z;
-		var adId = Math.abs(tile2.id - tile1.id);
+		const dZ = tile2.z - tile1.z;
+		const adId = Math.abs(tile2.id - tile1.id);
 		// dZ = 0 : same height
 		// adZ = .5 : stairs
 
@@ -814,34 +811,19 @@ Sam.RH.version = 3.0;
 	};
 
 	// =============================================================================
-	// MoveRoute Jumping & Falling
+	// MoveCommands
 	// =============================================================================
 
-	Sam.RH.moveRouteJump = (jumpx, jumpy, fall = true) => {
-		var beforeJumpTile = getPlayerTile();
-		var afterJumpTile = getTile(
-			beforeJumpTile.x + jumpx,
-			beforeJumpTile.y + jumpy
-		);
-		var afterFallTile = afterJumpTile;
-
-		// Create moveRoute
-		var moveRoute = {
-			list: [],
-			skippable: true,
-			repeat: false,
-			wait: true
-		};
-
-		// Start moveCommands
-		moveRoute.list = moveRoute.list.concat([
+	Sam.RH.startCommands = () => {
+		return [
 			{ code: Game_Character.ROUTE_THROUGH_ON },
 			{ code: Game_Character.ROUTE_WALK_ANIME_OFF },
 			{ code: Game_Character.ROUTE_DIR_FIX_ON }
-		]);
+		];
+	};
 
-		// Add moveCommand Jump
-		moveRoute.list = moveRoute.list.concat([
+	Sam.RH.jumpCommands = (jumpx, jumpy) => {
+		return [
 			{
 				code: Game_Character.ROUTE_CHANGE_IMAGE,
 				parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Jump]
@@ -850,151 +832,12 @@ Sam.RH.version = 3.0;
 				code: Game_Character.ROUTE_JUMP,
 				parameters: [jumpx, jumpy]
 			}
-		]);
-
-		// Add moveCommand Fall
-		moveRoute.list = moveRoute.list.concat([
-			{
-				code: Game_Character.ROUTE_CHANGE_SPEED,
-				parameters: [Sam.RH.FallSpeed]
-			},
-			{
-				code: Game_Character.ROUTE_CHANGE_IMAGE,
-				parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Fall]
-			}
-		]);
-
-		if (fall) {
-			var playerZ = beforeJumpTile.z;
-			if ($gamePlayer.direction() == 8) {
-				if (
-					playerZ > afterFallTile.NearbyTile(2).z &&
-					playerZ > afterFallTile.z
-				) {
-					moveRoute.list = moveRoute.list.concat([
-						{ code: Game_Character.ROUTE_THROUGH_ON },
-						{ code: Game_Character.ROUTE_MOVE_DOWN }
-					]);
-				}
-			} else {
-				console.log("playerZ", playerZ);
-				console.log("beforeJumpTile", beforeJumpTile);
-				console.log("afterJumpTile", afterJumpTile);
-				while (
-					afterFallTile.id == 0 ||
-					(playerZ > afterFallTile.NearbyTile(2).z &&
-						playerZ > afterFallTile.z)
-				) {
-					moveRoute.list = moveRoute.list.concat([
-						{ code: Game_Character.ROUTE_MOVE_DOWN }
-					]);
-					afterFallTile = getTile(
-						afterFallTile.x,
-						afterFallTile.y + 1
-					);
-					playerZ -= 1;
-					console.log("playerZ", playerZ);
-					console.log("afterFallTile", afterFallTile);
-
-					if (playerZ < 0) break;
-				}
-			}
-		}
-
-		// End moveCommands
-		moveRoute.list = moveRoute.list.concat([
-			{
-				code: Game_Character.ROUTE_CHANGE_IMAGE,
-				parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Walk]
-			},
-			{ code: Game_Character.ROUTE_THROUGH_OFF },
-			{ code: Game_Character.ROUTE_WALK_ANIME_ON },
-			{ code: Game_Character.ROUTE_DIR_FIX_OFF },
-			{
-				code: Game_Character.ROUTE_CHANGE_SPEED,
-				parameters: [Sam.RH.NormalSpeed]
-			}
-		]);
-
-		// Change Ground Common Events
-		var tileG1 = beforeJumpTile.g;
-		var tileG2 = afterFallTile.g;
-
-		if (tileG1 != tileG2) {
-			console.log("ground changed from " + tileG1 + " To " + tileG2);
-
-			var CommonEventId1 = Number(
-				Sam.RH.parameters["Ground Change From " + tileG1]
-			);
-			if (CommonEventId1 != 0) {
-				moveRoute.list = moveRoute.list.concat([
-					{
-						code: Game_Character.ROUTE_SCRIPT,
-						parameters: [
-							"$gameTemp.reserveCommonEvent(" +
-								CommonEventId1 +
-								");"
-						]
-					}
-				]);
-			}
-
-			var CommonEventId2 = Number(
-				Sam.RH.parameters["Ground Change To " + tileG2]
-			);
-			if (CommonEventId2 != 0) {
-				moveRoute.list = moveRoute.list.concat([
-					{
-						code: Game_Character.ROUTE_SCRIPT,
-						parameters: [
-							"$gameTemp.reserveCommonEvent(" +
-								CommonEventId2 +
-								");"
-						]
-					}
-				]);
-			}
-		}
-
-		// End moveCommands
-		moveRoute.list = moveRoute.list.concat([
-			{ code: Game_Character.ROUTE_END }
-		]);
-
-		// set moveRoute
-		if (!$gamePlayer.isMoveRouteForcing())
-			$gamePlayer.forceMoveRoute(moveRoute);
+		];
 	};
 
-	// =============================================================================
-	// MoveRoute Dashing & Falling
-	// =============================================================================
-
-	Sam.RH.moveRouteDash = dash => {
-		console.log(dash);
-
-		var beforeDashTile = getPlayerTile();
-		var afterDashTile = beforeDashTile;
-		if (dash == 1) {
-			afterDashTile = getLookingPlayerTile();
-		} else if (dash == 2) {
-			afterDashTile = getJumpingPlayerTile();
-		}
-		var afterFallTile = afterDashTile;
-
-		// Create moveRoute
-		var moveRoute = {
-			list: [],
-			skippable: true,
-			repeat: false,
-			wait: true
-		};
-
-		// Start moveCommands
-		moveRoute.list = moveRoute.list.concat([
-			{ code: Game_Character.ROUTE_THROUGH_ON },
-			{ code: Game_Character.ROUTE_WALK_ANIME_OFF },
-			{ code: Game_Character.ROUTE_DIR_FIX_ON },
+	Sam.RH.dashCommands = (dash) => {
+		let moveRouteList = [];
+		moveRouteList = moveRouteList.concat([
 			{
 				code: Game_Character.ROUTE_CHANGE_SPEED,
 				parameters: [Sam.RH.DashSpeed]
@@ -1007,7 +850,7 @@ Sam.RH.version = 3.0;
 
 		// Show Dash Animation
 		if (Sam.RH.DashAnimation) {
-			moveRoute.list = moveRoute.list.concat([
+			moveRouteList = moveRouteList.concat([
 				{
 					code: Game_Character.ROUTE_SCRIPT,
 					parameters: [
@@ -1021,18 +864,20 @@ Sam.RH.version = 3.0;
 
 		// Add moveCommand Dash
 		if (dash >= 1) {
-			moveRoute.list = moveRoute.list.concat([
+			moveRouteList = moveRouteList.concat([
 				{ code: Game_Character.ROUTE_MOVE_FORWARD }
 			]);
 		}
 		if (dash >= 2) {
-			moveRoute.list = moveRoute.list.concat([
+			moveRouteList = moveRouteList.concat([
 				{ code: Game_Character.ROUTE_MOVE_FORWARD }
 			]);
 		}
+		return moveRouteList;
+	};
 
-		// Set FallSpeed
-		moveRoute.list = moveRoute.list.concat([
+	Sam.RH.beforeFallCommands = (jumpx, jumpy) => {
+		return [
 			{
 				code: Game_Character.ROUTE_CHANGE_SPEED,
 				parameters: [Sam.RH.FallSpeed]
@@ -1041,24 +886,29 @@ Sam.RH.version = 3.0;
 				code: Game_Character.ROUTE_CHANGE_IMAGE,
 				parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Fall]
 			}
-		]);
+		];
+	};
 
-		// Add moveCommand Fall
-		var playerZ = beforeDashTile.z;
-
+	Sam.RH.fallCommands = (playerZ, beforeFallTile) => {
+		let afterFallTile = beforeFallTile;
+		let moveRouteList = [];
 		if ($gamePlayer.direction() == 8) {
-			if (playerZ > afterFallTile.NearbyTile(2).z) {
-				moveRoute.list = moveRoute.list.concat([
+			if (
+				playerZ > afterFallTile.NearbyTile(2).z &&
+				playerZ > afterFallTile.z
+			) {
+				moveRouteList = moveRouteList.concat([
+					{ code: Game_Character.ROUTE_THROUGH_ON },
 					{ code: Game_Character.ROUTE_MOVE_DOWN }
 				]);
 			}
 		} else {
 			while (
-				getPlayerTile().id == 0 ||
+				afterFallTile.id == 0 ||
 				(playerZ > afterFallTile.NearbyTile(2).z &&
 					playerZ > afterFallTile.z)
 			) {
-				moveRoute.list = moveRoute.list.concat([
+				moveRouteList = moveRouteList.concat([
 					{ code: Game_Character.ROUTE_MOVE_DOWN }
 				]);
 				afterFallTile = getTile(afterFallTile.x, afterFallTile.y + 1);
@@ -1067,9 +917,11 @@ Sam.RH.version = 3.0;
 				if (playerZ < 0) break;
 			}
 		}
+		return [moveRouteList, afterFallTile];
+	};
 
-		// End moveCommands
-		moveRoute.list = moveRoute.list.concat([
+	Sam.RH.afterFallCommands = (jumpx, jumpy) => {
+		return [
 			{
 				code: Game_Character.ROUTE_CHANGE_IMAGE,
 				parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Walk]
@@ -1081,20 +933,19 @@ Sam.RH.version = 3.0;
 				code: Game_Character.ROUTE_CHANGE_SPEED,
 				parameters: [Sam.RH.NormalSpeed]
 			}
-		]);
+		];
+	};
 
-		// Change Ground Common Events
-		var tileG1 = beforeDashTile.g;
-		var tileG2 = afterFallTile.g;
-
+	Sam.RH.changeGroundCommands = (tileG1, tileG2) => {
+		let moveRouteList = [];
 		if (tileG1 != tileG2) {
 			console.log("ground changed from " + tileG1 + " To " + tileG2);
 
-			var CommonEventId1 = Number(
+			const CommonEventId1 = Number(
 				Sam.RH.parameters["Ground Change From " + tileG1]
 			);
 			if (CommonEventId1 != 0) {
-				moveRoute.list = moveRoute.list.concat([
+				moveRouteList = moveRouteList.concat([
 					{
 						code: Game_Character.ROUTE_SCRIPT,
 						parameters: [
@@ -1106,11 +957,11 @@ Sam.RH.version = 3.0;
 				]);
 			}
 
-			var CommonEventId2 = Number(
+			const CommonEventId2 = Number(
 				Sam.RH.parameters["Ground Change To " + tileG2]
 			);
 			if (CommonEventId2 != 0) {
-				moveRoute.list = moveRoute.list.concat([
+				moveRouteList = moveRouteList.concat([
 					{
 						code: Game_Character.ROUTE_SCRIPT,
 						parameters: [
@@ -1122,11 +973,113 @@ Sam.RH.version = 3.0;
 				]);
 			}
 		}
+		return moveRouteList;
+	};
+
+	Sam.RH.endCommands = () => {
+		return [{ code: Game_Character.ROUTE_END }];
+	};
+
+	// =============================================================================
+	// MoveRoute Jumping & Falling
+	// =============================================================================
+
+	Sam.RH.moveRouteJump = (jumpx, jumpy, fall = true) => {
+		const beforeJumpTile = getPlayerTile();
+		const afterJumpTile = getTile(
+			beforeJumpTile.x + jumpx,
+			beforeJumpTile.y + jumpy
+		);
+		let afterFallTile = afterJumpTile;
+
+		// Create moveRoute
+		let moveRoute = {
+			list: [],
+			skippable: true,
+			repeat: false,
+			wait: true
+		};
+
+		// Start moveCommands
+		moveRoute.list = moveRoute.list.concat(Sam.RH.startCommands());
+
+		// Add moveCommand Jump
+		moveRoute.list = moveRoute.list.concat(
+			Sam.RH.jumpCommands(jumpx, jumpy)
+		);
+
+		// Add moveCommand Fall
+		if (fall) {
+			moveRoute.list = moveRoute.list.concat(Sam.RH.beforeFallCommands());
+			let fallingCommands;
+			[fallingCommands, afterFallTile] = Sam.RH.fallCommands(
+				beforeJumpTile.z,
+				afterJumpTile
+			);
+			moveRoute.list = moveRoute.list.concat(fallingCommands);
+			moveRoute.list = moveRoute.list.concat(Sam.RH.afterFallCommands());
+		}
+
+		// Change Ground Common Events
+		moveRoute.list = moveRoute.list.concat(
+			Sam.RH.afterFallCommands(beforeJumpTile.g, afterFallTile.g)
+		);
 
 		// End moveCommands
-		moveRoute.list = moveRoute.list.concat([
-			{ code: Game_Character.ROUTE_END }
-		]);
+		moveRoute.list = moveRoute.list.concat(Sam.RH.endCommands());
+
+		// set moveRoute
+		if (!$gamePlayer.isMoveRouteForcing())
+			$gamePlayer.forceMoveRoute(moveRoute);
+	};
+
+	// =============================================================================
+	// MoveRoute Dashing & Falling
+	// =============================================================================
+
+	Sam.RH.moveRouteDash = dash => {
+		const beforeDashTile = getPlayerTile();
+		let afterDashTile = beforeDashTile;
+		if (dash == 1) {
+			afterDashTile = getLookingPlayerTile();
+		} else if (dash == 2) {
+			afterDashTile = getJumpingPlayerTile();
+		}
+		let afterFallTile = afterDashTile;
+
+		// Create moveRoute
+		let moveRoute = {
+			list: [],
+			skippable: true,
+			repeat: false,
+			wait: true
+		};
+
+		// Start moveCommands
+		moveRoute.list = moveRoute.list.concat(Sam.RH.startCommands());
+
+		// Add moveCommand dash
+		moveRoute.list = moveRoute.list.concat(
+			Sam.RH.dashCommands(dash)
+		);
+
+		// Fall
+		moveRoute.list = moveRoute.list.concat(Sam.RH.beforeFallCommands());
+		let fallingCommands;
+		[fallingCommands, afterFallTile] = Sam.RH.fallCommands(
+			beforeDashTile.z,
+			afterDashTile
+		);
+		moveRoute.list = moveRoute.list.concat(fallingCommands);
+		moveRoute.list = moveRoute.list.concat(Sam.RH.afterFallCommands());
+
+		// Change Ground Common Events
+		moveRoute.list = moveRoute.list.concat(
+			Sam.RH.afterFallCommands(beforeDashTile.g, afterFallTile.g)
+		);
+
+		// End moveCommands
+		moveRoute.list = moveRoute.list.concat(Sam.RH.endCommands());
 
 		// set moveRoute
 		if (!$gamePlayer.isMoveRouteForcing())
@@ -1138,10 +1091,10 @@ Sam.RH.version = 3.0;
 	// =============================================================================
 
 	Game_CharacterBase.prototype.Sam_RH_Jump = function() {
-		var playerTile = getPlayerTile();
-		var lookingPlayerTile = getLookingPlayerTile();
-		var climbingPlayerTile = getClimbingPlayerTile();
-		var jumpingPlayerTile = getJumpingPlayerTile();
+		const playerTile = getPlayerTile();
+		const lookingPlayerTile = getLookingPlayerTile();
+		const climbingPlayerTile = getClimbingPlayerTile();
+		const jumpingPlayerTile = getJumpingPlayerTile();
 
 		if ($gamePlayer.direction() == 2) {
 			if (
@@ -1195,12 +1148,12 @@ Sam.RH.version = 3.0;
 
 	// Climb Up
 	Game_CharacterBase.prototype.Sam_RH_ClimbUp = function() {
-		var playerTile = getPlayerTile();
-		var lookingPlayerTile = getLookingPlayerTile();
-		var climbingPlayerTile = getClimbingPlayerTile();
+		const playerTile = getPlayerTile();
+		const lookingPlayerTile = getLookingPlayerTile();
+		const climbingPlayerTile = getClimbingPlayerTile();
 
-		var dZ = lookingPlayerTile.z - playerTile.z;
-		var adZ = Math.abs(dZ);
+		const dZ = lookingPlayerTile.z - playerTile.z;
+		const adZ = Math.abs(dZ);
 
 		if (
 			playerTile.z + 1 == climbingPlayerTile.z &&
@@ -1227,9 +1180,9 @@ Sam.RH.version = 3.0;
 	Game_CharacterBase.prototype.Sam_RH_FallDown = function() {
 		console.log("Sam_RH_FallDown");
 
-		var playerTile = getPlayerTile();
-		var lookingPlayerTile = getLookingPlayerTile();
-		var fallingPlayerTile = getFallingPlayerTile();
+		const playerTile = getPlayerTile();
+		const lookingPlayerTile = getLookingPlayerTile();
+		const fallingPlayerTile = getFallingPlayerTile();
 
 		if (playerTile.z > lookingPlayerTile.z) {
 			switch ($gamePlayer.direction()) {
@@ -1255,9 +1208,9 @@ Sam.RH.version = 3.0;
 
 	// Dash
 	Game_CharacterBase.prototype.Sam_RH_Dash = function() {
-		var playerTile = getPlayerTile();
-		var lookingPlayerTile = getLookingPlayerTile();
-		var jumpingPlayerTile = getJumpingPlayerTile();
+		const playerTile = getPlayerTile();
+		const lookingPlayerTile = getLookingPlayerTile();
+		const jumpingPlayerTile = getJumpingPlayerTile();
 
 		if (
 			playerTile.z + 0.5 >= lookingPlayerTile.z &&
