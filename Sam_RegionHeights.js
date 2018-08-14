@@ -55,6 +55,10 @@
 //
 // 3.0 - 12/08/2018
 //       ES6 : class, arrow functions, ...
+//
+// 3.1 - 14/08/2018
+//       changed action order :
+//       player will try to climb first and jump after
 // =============================================================================
 //
 
@@ -63,7 +67,7 @@ Imported.Sam_RegionHeights = true;
 
 var Sam = Sam || {};
 Sam.RH = Sam.RH || {};
-Sam.RH.version = 3.0;
+Sam.RH.version = 3.1;
 
 //
 // =============================================================================
@@ -835,7 +839,7 @@ Sam.RH.version = 3.0;
 		];
 	};
 
-	Sam.RH.dashCommands = (dash) => {
+	Sam.RH.dashCommands = dash => {
 		let moveRouteList = [];
 		moveRouteList = moveRouteList.concat([
 			{
@@ -1059,9 +1063,7 @@ Sam.RH.version = 3.0;
 		moveRoute.list = moveRoute.list.concat(Sam.RH.startCommands());
 
 		// Add moveCommand dash
-		moveRoute.list = moveRoute.list.concat(
-			Sam.RH.dashCommands(dash)
-		);
+		moveRoute.list = moveRoute.list.concat(Sam.RH.dashCommands(dash));
 
 		// Fall
 		moveRoute.list = moveRoute.list.concat(Sam.RH.beforeFallCommands());
@@ -1097,18 +1099,17 @@ Sam.RH.version = 3.0;
 		const jumpingPlayerTile = getJumpingPlayerTile();
 
 		if ($gamePlayer.direction() == 2) {
-			if (
-				playerTile.z >= jumpingPlayerTile.z &&
-				playerTile.z + 1 >= climbingPlayerTile.z
-			) {
-				Sam.RH.moveRouteJump(0, 2);
-			} else if (playerTile.z + 1 == climbingPlayerTile.z) {
+			if (playerTile.z + 1 == climbingPlayerTile.z) {
 				this.Sam_RH_ClimbUp();
+			} else if (playerTile.z >= jumpingPlayerTile.z){
+				Sam.RH.moveRouteJump(0, 2);
 			} else if (playerTile.z >= lookingPlayerTile.z) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
 				Sam.RH.moveRouteJump(0, 0);
 			}
+		} else if (playerTile.z + 1 == climbingPlayerTile.z) {
+			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z + 0.5 >= jumpingPlayerTile.z &&
 			jumpingPlayerTile.id != 0
@@ -1124,8 +1125,6 @@ Sam.RH.version = 3.0;
 					Sam.RH.moveRouteJump(0, -2);
 					break;
 			}
-		} else if (playerTile.z + 1 == climbingPlayerTile.z) {
-			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z >= lookingPlayerTile.z &&
 			lookingPlayerTile.id != 0
