@@ -55,6 +55,10 @@
 //
 // 3.0 - 12/08/2018
 //       ES6 : class, arrow functions, ...
+//
+// 3.1 - 14/08/2018
+//       changed action order :
+//       player will try to climb first and jump after
 // =============================================================================
 //
 
@@ -63,7 +67,7 @@ Imported.Sam_RegionHeights = true;
 
 var Sam = Sam || {};
 Sam.RH = Sam.RH || {};
-Sam.RH.version = 3.0;
+Sam.RH.version = 3.1;
 
 //
 // =============================================================================
@@ -835,7 +839,7 @@ Sam.RH.version = 3.0;
 		];
 	};
 
-	Sam.RH.dashCommands = (dash) => {
+	Sam.RH.dashCommands = dash => {
 		let moveRouteList = [];
 		moveRouteList = moveRouteList.concat([
 			{
@@ -937,6 +941,7 @@ Sam.RH.version = 3.0;
 	};
 
 	Sam.RH.changeGroundCommands = (tileG1, tileG2) => {
+		console.log("Hi");
 		let moveRouteList = [];
 		if (tileG1 != tileG2) {
 			console.log("ground changed from " + tileG1 + " To " + tileG2);
@@ -1022,7 +1027,7 @@ Sam.RH.version = 3.0;
 
 		// Change Ground Common Events
 		moveRoute.list = moveRoute.list.concat(
-			Sam.RH.afterFallCommands(beforeJumpTile.g, afterFallTile.g)
+			Sam.RH.changeGroundCommands(beforeJumpTile.g, afterFallTile.g)
 		);
 
 		// End moveCommands
@@ -1059,9 +1064,7 @@ Sam.RH.version = 3.0;
 		moveRoute.list = moveRoute.list.concat(Sam.RH.startCommands());
 
 		// Add moveCommand dash
-		moveRoute.list = moveRoute.list.concat(
-			Sam.RH.dashCommands(dash)
-		);
+		moveRoute.list = moveRoute.list.concat(Sam.RH.dashCommands(dash));
 
 		// Fall
 		moveRoute.list = moveRoute.list.concat(Sam.RH.beforeFallCommands());
@@ -1075,7 +1078,7 @@ Sam.RH.version = 3.0;
 
 		// Change Ground Common Events
 		moveRoute.list = moveRoute.list.concat(
-			Sam.RH.afterFallCommands(beforeDashTile.g, afterFallTile.g)
+			Sam.RH.changeGroundCommands(beforeDashTile.g, afterFallTile.g)
 		);
 
 		// End moveCommands
@@ -1097,18 +1100,17 @@ Sam.RH.version = 3.0;
 		const jumpingPlayerTile = getJumpingPlayerTile();
 
 		if ($gamePlayer.direction() == 2) {
-			if (
-				playerTile.z >= jumpingPlayerTile.z &&
-				playerTile.z + 1 >= climbingPlayerTile.z
-			) {
-				Sam.RH.moveRouteJump(0, 2);
-			} else if (playerTile.z + 1 == climbingPlayerTile.z) {
+			if (playerTile.z + 1 == climbingPlayerTile.z) {
 				this.Sam_RH_ClimbUp();
+			} else if (playerTile.z >= jumpingPlayerTile.z) {
+				Sam.RH.moveRouteJump(0, 2);
 			} else if (playerTile.z >= lookingPlayerTile.z) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
 				Sam.RH.moveRouteJump(0, 0);
 			}
+		} else if (playerTile.z + 1 == climbingPlayerTile.z) {
+			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z + 0.5 >= jumpingPlayerTile.z &&
 			jumpingPlayerTile.id != 0
@@ -1124,8 +1126,6 @@ Sam.RH.version = 3.0;
 					Sam.RH.moveRouteJump(0, -2);
 					break;
 			}
-		} else if (playerTile.z + 1 == climbingPlayerTile.z) {
-			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z >= lookingPlayerTile.z &&
 			lookingPlayerTile.id != 0
@@ -1236,6 +1236,24 @@ Sam.RH.version = 3.0;
 
 	// GET INFO
 	Game_CharacterBase.prototype.Sam_RH_getInfo = function() {
+		var X = 17;
+		var Y = 13;
+		var x = 0;
+		var y = 0;
+		var dx = 0;
+		var dy = -1;
+		var i = 0;
+		while (i < 289) {
+			if ((-X / 2 < x && x <= X / 2) || (-Y / 2 < y && y <= Y / 2)) {
+				console.log(x, y);
+			}
+			if (x == y || (x < 0 && x == -y) || (x > 0 && x == 1 - y)) {
+				[dx, dy] = [-dy, dx];
+			}
+			[x, y] = [x + dx, y + dy];
+			i++;
+		}
+
 		console.log("PlayerTile:");
 		console.log(getPlayerTile());
 		console.log("LookingPlayerTile:");
@@ -1246,6 +1264,10 @@ Sam.RH.version = 3.0;
 		console.log(getClimbingPlayerTile());
 		console.log("FallingPlayerTile:");
 		console.log(getFallingPlayerTile());
+	};
+
+	Game_Player.prototype.triggerTouchAction = function() {
+		return false;
 	};
 
 	// =============================================================================
