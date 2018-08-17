@@ -828,6 +828,7 @@ Sam.RH.version = 3.1;
 			};
 		}
 
+<<<<<<< HEAD
 		start() {
 			console.log("jump");
 			this.moveRoute.list = this.moveRoute.list.concat([
@@ -836,6 +837,20 @@ Sam.RH.version = 3.1;
 				{ code: Game_Character.ROUTE_DIR_FIX_ON }
 			]);
 		}
+=======
+	Sam.RH.dashCommands = dash => {
+		let moveRouteList = [];
+		moveRouteList = moveRouteList.concat([
+			{
+				code: Game_Character.ROUTE_CHANGE_SPEED,
+				parameters: [Sam.RH.DashSpeed]
+			},
+			{
+				code: Game_Character.ROUTE_CHANGE_IMAGE,
+				parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Dash]
+			}
+		]);
+>>>>>>> ae1f0fa90424f9d37e0fa2d6071156b9b87af58a
 
 		jump(jumpx, jumpy) {
 			console.log("jump");
@@ -1058,8 +1073,13 @@ Sam.RH.version = 3.1;
 		// Start moveCommands
 		route.start();
 
+<<<<<<< HEAD
 		// Add moveCommand Jump
 		route.dash(dash);
+=======
+		// Add moveCommand dash
+		moveRoute.list = moveRoute.list.concat(Sam.RH.dashCommands(dash));
+>>>>>>> ae1f0fa90424f9d37e0fa2d6071156b9b87af58a
 
 		// Add moveCommand Fall
 		route.beforeFall();
@@ -1091,7 +1111,11 @@ Sam.RH.version = 3.1;
 		if ($gamePlayer.direction() == 2) {
 			if (playerTile.z + 1 == climbingPlayerTile.z) {
 				this.Sam_RH_ClimbUp();
+<<<<<<< HEAD
 			} else if (playerTile.z >= jumpingPlayerTile.z) {
+=======
+			} else if (playerTile.z >= jumpingPlayerTile.z){
+>>>>>>> ae1f0fa90424f9d37e0fa2d6071156b9b87af58a
 				Sam.RH.moveRouteJump(0, 2);
 			} else if (playerTile.z >= lookingPlayerTile.z) {
 				Sam.RH.moveRouteJump(0, 1);
