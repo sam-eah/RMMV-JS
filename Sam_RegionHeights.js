@@ -59,6 +59,9 @@
 // 3.1 - 14/08/2018
 //       changed action order :
 //       player will try to climb first and jump after
+//
+// 4.0 - 18/08/2018
+//       locking events !
 // =============================================================================
 //
 
@@ -67,7 +70,7 @@ Imported.Sam_RegionHeights = true;
 
 var Sam = Sam || {};
 Sam.RH = Sam.RH || {};
-Sam.RH.version = 3.1;
+Sam.RH.version = 4.0;
 
 //
 // =============================================================================
@@ -828,7 +831,6 @@ Sam.RH.version = 3.1;
 			};
 		}
 
-<<<<<<< HEAD
 		start() {
 			console.log("jump");
 			this.moveRoute.list = this.moveRoute.list.concat([
@@ -837,20 +839,6 @@ Sam.RH.version = 3.1;
 				{ code: Game_Character.ROUTE_DIR_FIX_ON }
 			]);
 		}
-=======
-	Sam.RH.dashCommands = dash => {
-		let moveRouteList = [];
-		moveRouteList = moveRouteList.concat([
-			{
-				code: Game_Character.ROUTE_CHANGE_SPEED,
-				parameters: [Sam.RH.DashSpeed]
-			},
-			{
-				code: Game_Character.ROUTE_CHANGE_IMAGE,
-				parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Dash]
-			}
-		]);
->>>>>>> ae1f0fa90424f9d37e0fa2d6071156b9b87af58a
 
 		jump(jumpx, jumpy) {
 			console.log("jump");
@@ -1057,7 +1045,6 @@ Sam.RH.version = 3.1;
 	// =============================================================================
 
 	Sam.RH.moveRouteDash = dash => {
-
 		// Create moveRoute
 		let route = new Route();
 
@@ -1073,13 +1060,8 @@ Sam.RH.version = 3.1;
 		// Start moveCommands
 		route.start();
 
-<<<<<<< HEAD
 		// Add moveCommand Jump
 		route.dash(dash);
-=======
-		// Add moveCommand dash
-		moveRoute.list = moveRoute.list.concat(Sam.RH.dashCommands(dash));
->>>>>>> ae1f0fa90424f9d37e0fa2d6071156b9b87af58a
 
 		// Add moveCommand Fall
 		route.beforeFall();
@@ -1111,11 +1093,7 @@ Sam.RH.version = 3.1;
 		if ($gamePlayer.direction() == 2) {
 			if (playerTile.z + 1 == climbingPlayerTile.z) {
 				this.Sam_RH_ClimbUp();
-<<<<<<< HEAD
 			} else if (playerTile.z >= jumpingPlayerTile.z) {
-=======
-			} else if (playerTile.z >= jumpingPlayerTile.z){
->>>>>>> ae1f0fa90424f9d37e0fa2d6071156b9b87af58a
 				Sam.RH.moveRouteJump(0, 2);
 			} else if (playerTile.z >= lookingPlayerTile.z) {
 				Sam.RH.moveRouteJump(0, 1);
@@ -1249,24 +1227,6 @@ Sam.RH.version = 3.1;
 
 	// GET INFO
 	Game_CharacterBase.prototype.Sam_RH_getInfo = function() {
-		var X = 17;
-		var Y = 13;
-		var x = 0;
-		var y = 0;
-		var dx = 0;
-		var dy = -1;
-		var i = 0;
-		while (i < 289) {
-			if ((-X / 2 < x && x <= X / 2) || (-Y / 2 < y && y <= Y / 2)) {
-				console.log(x, y);
-			}
-			if (x == y || (x < 0 && x == -y) || (x > 0 && x == 1 - y)) {
-				[dx, dy] = [-dy, dx];
-			}
-			[x, y] = [x + dx, y + dy];
-			i++;
-		}
-
 		console.log("PlayerTile:");
 		console.log(getPlayerTile());
 		console.log("LookingPlayerTile:");
@@ -1277,6 +1237,134 @@ Sam.RH.version = 3.1;
 		console.log(getClimbingPlayerTile());
 		console.log("FallingPlayerTile:");
 		console.log(getFallingPlayerTile());
+	};
+
+	Game_Event.prototype.update = function() {
+	    Game_Character.prototype.update.call(this);
+	    this.checkEventTriggerAuto();
+	    this.updateParallel();
+
+	    // console.log($gamePlayer.lockEvent);
+	    if ($gamePlayer.lockEvent) {
+	    	// console.log("oui");
+			const event = $gameMap.event($gamePlayer.lockEvent);
+			const screenX = event.screenX();
+			const screenY = event.screenY();
+			// console.log("EVENT", eventId, screenX, screenY);
+			// console.log(screenX, screenY);
+			if (Math.hypot(event.x - $gamePlayer.x, event.y - $gamePlayer.y) <= 5) {
+				$gameScreen.showPicture(1, "Lock", 1, screenX, screenY - 14, 100, 100, 255, 0);
+			}else {
+				$gamePlayer.lockEvent = 0;
+				$gameScreen.erasePicture(1);
+			}
+		}
+	};
+
+
+	Game_Player.prototype.clearTransferInfo = function() {
+	    this._transferring = false;
+	    this._newMapId = 0;
+	    this._newX = 0;
+	    this._newY = 0;
+	    this._newDirection = 0;
+	    this.lockEvent = 0;
+	    $gameScreen.erasePicture(1);
+	};
+
+	Game_CharacterBase.prototype.Sam_RH_Locking = function(x, y){
+		if ($gameMap.eventIdXy(x, y) ) {
+			console.log($gameMap.eventIdXy(x, y), $gamePlayer.lockEvent)
+			if ($gameMap.eventIdXy(x, y) != $gamePlayer.lockEvent) {
+				const eventId = $gameMap.eventIdXy(x, y);
+				// console.log("EVENT", x, y, eventId);
+				$gamePlayer.lockEvent = eventId;
+
+				return eventId;
+			} else {
+				console.log("oui");
+			}
+		}
+		return false;
+	}
+
+	Game_CharacterBase.prototype.Sam_RH_Lock = function() {
+		var x_centre = $gamePlayer.x;
+		var y_centre = $gamePlayer.y;
+		// var R = 5;
+		// var dx = 0;
+		// var dy = -1;
+		// var i = 0;
+		// while (i < 25) {
+		// 	if ((x - R/2 < x && x <= x + R/2) || (y - R/2 < y && y <= y + R/2)) {
+		// 		console.log(x, y);
+		// 		if ($gameMap.eventIdXy(x, y)){
+		// 			console.log($gameMap.eventIdXy(x, y));
+		// 			//return;
+		// 		}
+		// 	}
+		// 	if ($gamePlayer.x - x == $gamePlayer.x - y ||
+		// 		(x < $gamePlayer.x && x == -y) ||
+		// 		(x > $gamePlayer.x && x == 1 - y)) {
+		// 		[dx, dy] = [-dy, dx];
+		// 	}
+		// 	[x, y] = [x + dx, y + dy];
+		// 	i++;
+		// }
+
+		let r = 1;
+		let i = 1;
+		while (r <= 3) {
+			let x = 0;
+			let y = r;
+			let d = r - 1;
+
+			while (y >= x) {
+				// console.log("r", r);
+				if (this.Sam_RH_Locking(x_centre + x, y_centre + y)){
+					return;
+				}
+				if (this.Sam_RH_Locking(x_centre + y, y_centre + x)){
+					return;
+				}
+				if (this.Sam_RH_Locking(x_centre - x, y_centre + y)){
+					return;
+				}
+				if (this.Sam_RH_Locking(x_centre - y, y_centre + x)){
+					return;
+				}
+				if (this.Sam_RH_Locking(x_centre + x, y_centre - y)){
+					return;
+				}
+				if (this.Sam_RH_Locking(x_centre + y, y_centre - x)){
+					return;
+				}
+				if (this.Sam_RH_Locking(x_centre - x, y_centre - y)){
+					return;
+				}
+				if (this.Sam_RH_Locking(x_centre - y, y_centre - x)){
+					return;
+				}
+
+				if (d >= 2 * x) {
+					d -= 2 * x + 1;
+					x++;
+				} else if (d < 2 * (r - y)) {
+					d += 2 * y - 1;
+					y--;
+				} else {
+					d += 2 * (y - x - 1);
+					y--;
+					x++;
+				}
+				i++;
+			}
+			r++;
+			i++;
+		}
+
+		$gamePlayer.lockEvent = 0;
+		$gameScreen.erasePicture(1);
 	};
 
 	// Game_Map.prototype.update = function(sceneActive) {
@@ -1339,6 +1427,10 @@ Sam.RH.version = 3.1;
 
 		if (command == "Sam_RH_getInfo") {
 			$gamePlayer.Sam_RH_getInfo();
+		}
+
+		if (command == "Sam_RH_Lock") {
+			$gamePlayer.Sam_RH_Lock();
 		}
 	};
 })();
