@@ -1247,6 +1247,49 @@ Sam.RH.version = 4.0;
 		console.log(getFallingPlayerTile());
 	};
 
+
+	const getEventTileId = (tile) => {
+		return $gameMap.eventIdXy(tile.x, tile.y); 
+	}
+
+	const damageEnemy = (tile) => {
+		let eventId = getEventTileId(tile);
+		if (eventId) {
+			$gameSelfSwitches.setValue([$gameMap._mapId, eventId, 'D'], true);
+			$gameMap.event(eventId).requestAnimation(126);
+		}
+	}
+
+	Game_CharacterBase.prototype.Sam_RH_Attack = function() {
+		const playerTile = getPlayerTile();
+		damageEnemy(getLookingPlayerTile());
+
+		if ($gamePlayer.direction() == 8) {
+			$gamePlayer.requestAnimation(122);
+			damageEnemy(playerTile.NearbyTile(7));
+			damageEnemy(playerTile.NearbyTile(9));
+		}
+		else if ($gamePlayer.direction() == 6) {
+			$gamePlayer.requestAnimation(123);
+			damageEnemy(playerTile.NearbyTile(3));
+			damageEnemy(playerTile.NearbyTile(9));
+		}
+		else if ($gamePlayer.direction() == 4) {
+			$gamePlayer.requestAnimation(124);
+			damageEnemy(playerTile.NearbyTile(7));
+			damageEnemy(playerTile.NearbyTile(1));
+		}
+		else if ($gamePlayer.direction() == 2) {
+			$gamePlayer.requestAnimation(125);
+			damageEnemy(playerTile.NearbyTile(3));
+			damageEnemy(playerTile.NearbyTile(1));
+		}
+		// $gameInterpreter.setWaitMode('animation');
+	}
+
+
+	// Display Lock image
+
 	Game_Event.prototype.Sam_RH_updateLock = function() {
 	    // console.log($gamePlayer.lockEvent);
 	    if ($gamePlayer.lockEvent) {
@@ -1267,6 +1310,8 @@ Sam.RH.version = 4.0;
 		}
 	}
 
+
+	// Aliasing 
 	Sam.RH.Game_Event_update = Game_Event.prototype.update
 	Game_Event.prototype.update = function() {
 		Sam.RH.Game_Event_update.call(this);
@@ -1275,7 +1320,7 @@ Sam.RH.version = 4.0;
 	    this.Sam_RH_updateLock();
 	};
 
-
+	// Aliasing 
 	Sam.RH.Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo
 	Game_Player.prototype.clearTransferInfo = function() {
 	    Sam.RH.Game_Player_clearTransferInfo.call(this);
@@ -1284,6 +1329,8 @@ Sam.RH.version = 4.0;
 	    $gameScreen.erasePicture(1);
 	};
 
+
+	// Changing Lock Target
 	Game_CharacterBase.prototype.Sam_RH_Locking = function(x, y){
 		const eventId = $gameMap.eventIdXy(x, y);
 		if (eventId) {
@@ -1302,29 +1349,9 @@ Sam.RH.version = 4.0;
 	Game_CharacterBase.prototype.Sam_RH_Lock = function() {
 		var x_centre = $gamePlayer.x;
 		var y_centre = $gamePlayer.y;
-		// var R = 5;
-		// var dx = 0;
-		// var dy = -1;
-		// var i = 0;
-		// while (i < 25) {
-		// 	if ((x - R/2 < x && x <= x + R/2) || (y - R/2 < y && y <= y + R/2)) {
-		// 		console.log(x, y);
-		// 		if ($gameMap.eventIdXy(x, y)){
-		// 			console.log($gameMap.eventIdXy(x, y));
-		// 			//return;
-		// 		}
-		// 	}
-		// 	if ($gamePlayer.x - x == $gamePlayer.x - y ||
-		// 		(x < $gamePlayer.x && x == -y) ||
-		// 		(x > $gamePlayer.x && x == 1 - y)) {
-		// 		[dx, dy] = [-dy, dx];
-		// 	}
-		// 	[x, y] = [x + dx, y + dy];
-		// 	i++;
-		// }
 
 		let r = 1;
-		let i = 1;
+		// Target must be 3 tiles from player max
 		while (r <= 3) {
 			let x = 0;
 			let y = r;
@@ -1368,10 +1395,8 @@ Sam.RH.version = 4.0;
 					y--;
 					x++;
 				}
-				i++;
 			}
 			r++;
-			i++;
 		}
 
 		$gamePlayer.lockEvent = 0;
@@ -1442,6 +1467,10 @@ Sam.RH.version = 4.0;
 
 		if (command == "Sam_RH_Lock") {
 			$gamePlayer.Sam_RH_Lock();
+		}
+
+		if (command == "Sam_RH_Attack") {
+			$gamePlayer.Sam_RH_Attack();
 		}
 	};
 })();
