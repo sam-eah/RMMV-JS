@@ -893,7 +893,7 @@ Sam.RH.version = 4.0;
 			}
 		}
 
-		beforeFall(jumpx, jumpy) {
+		beforeFall() {
 			this.moveRoute.list = this.moveRoute.list.concat([
 				{
 					code: Game_Character.ROUTE_CHANGE_SPEED,
@@ -936,7 +936,7 @@ Sam.RH.version = 4.0;
 			}
 		}
 
-		finish(jumpx, jumpy) {
+		finish() {
 			console.log("afterFall");
 			this.moveRoute.list = this.moveRoute.list.concat([
 				{
@@ -1091,20 +1091,25 @@ Sam.RH.version = 4.0;
 		const jumpingPlayerTile = getJumpingPlayerTile();
 
 		if ($gamePlayer.direction() == 2) {
-			if (playerTile.z + 1 == climbingPlayerTile.z) {
+			if (playerTile.z + 1 == climbingPlayerTile.z &&
+				!$gamePlayer.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
 				this.Sam_RH_ClimbUp();
-			} else if (playerTile.z >= jumpingPlayerTile.z) {
+			} else if (playerTile.z >= jumpingPlayerTile.z &&
+				!$gamePlayer.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)) {
 				Sam.RH.moveRouteJump(0, 2);
-			} else if (playerTile.z >= lookingPlayerTile.z) {
+			} else if (playerTile.z >= lookingPlayerTile.z &&
+				!$gamePlayer.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
 				Sam.RH.moveRouteJump(0, 0);
 			}
-		} else if (playerTile.z + 1 == climbingPlayerTile.z) {
+		} else if (playerTile.z + 1 == climbingPlayerTile.z &&
+				!$gamePlayer.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
 			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z + 0.5 >= jumpingPlayerTile.z &&
-			jumpingPlayerTile.id != 0
+			jumpingPlayerTile.id != 0 &&
+				!$gamePlayer.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
 		) {
 			switch ($gamePlayer.direction()) {
 				case 4:
@@ -1119,7 +1124,8 @@ Sam.RH.version = 4.0;
 			}
 		} else if (
 			playerTile.z >= lookingPlayerTile.z &&
-			lookingPlayerTile.id != 0
+			lookingPlayerTile.id != 0 &&
+				!$gamePlayer.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)
 		) {
 			switch ($gamePlayer.direction()) {
 				case 4:
@@ -1148,7 +1154,8 @@ Sam.RH.version = 4.0;
 
 		if (
 			playerTile.z + 1 == climbingPlayerTile.z &&
-			(adZ != 0 || adZ != 0.5)
+			(adZ != 0 || adZ != 0.5) &&
+				!$gamePlayer.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)
 		) {
 			switch ($gamePlayer.direction()) {
 				case 2:
@@ -1209,10 +1216,11 @@ Sam.RH.version = 4.0;
 		) {
 			if (
 				playerTile.z + 0.5 >= jumpingPlayerTile.z &&
-				(jumpingPlayerTile.id != 0 || $gamePlayer.direction() == 2)
+				(jumpingPlayerTile.id != 0 || $gamePlayer.direction() == 2) &&
+				!$gamePlayer.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
 			) {
 				Sam.RH.moveRouteDash(2);
-			} else {
+			} else if (!$gamePlayer.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
 				Sam.RH.moveRouteDash(1);
 			}
 		} else {
@@ -1239,51 +1247,54 @@ Sam.RH.version = 4.0;
 		console.log(getFallingPlayerTile());
 	};
 
-	Game_Event.prototype.update = function() {
-	    Game_Character.prototype.update.call(this);
-	    this.checkEventTriggerAuto();
-	    this.updateParallel();
-
+	Game_Event.prototype.Sam_RH_updateLock = function() {
 	    // console.log($gamePlayer.lockEvent);
 	    if ($gamePlayer.lockEvent) {
 	    	// console.log("oui");
-			const event = $gameMap.event($gamePlayer.lockEvent);
+	    	const eventId = $gamePlayer.lockEvent
+			const event = $gameMap.event(eventId);
 			const screenX = event.screenX();
 			const screenY = event.screenY();
 			// console.log("EVENT", eventId, screenX, screenY);
 			// console.log(screenX, screenY);
 			if (Math.hypot(event.x - $gamePlayer.x, event.y - $gamePlayer.y) <= 5) {
 				$gameScreen.showPicture(1, "Lock", 1, screenX, screenY - 14, 100, 100, 255, 0);
+				$gamePlayer.turnTowardCharacter(event);
 			}else {
 				$gamePlayer.lockEvent = 0;
 				$gameScreen.erasePicture(1);
 			}
 		}
+	}
+
+	Sam.RH.Game_Event_update = Game_Event.prototype.update
+	Game_Event.prototype.update = function() {
+		Sam.RH.Game_Event_update.call(this);
+	    Game_Character.prototype.update.call(this);
+
+	    this.Sam_RH_updateLock();
 	};
 
 
+	Sam.RH.Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo
 	Game_Player.prototype.clearTransferInfo = function() {
-	    this._transferring = false;
-	    this._newMapId = 0;
-	    this._newX = 0;
-	    this._newY = 0;
-	    this._newDirection = 0;
+	    Sam.RH.Game_Player_clearTransferInfo.call(this);
+
 	    this.lockEvent = 0;
 	    $gameScreen.erasePicture(1);
 	};
 
 	Game_CharacterBase.prototype.Sam_RH_Locking = function(x, y){
-		if ($gameMap.eventIdXy(x, y) ) {
-			console.log($gameMap.eventIdXy(x, y), $gamePlayer.lockEvent)
-			if ($gameMap.eventIdXy(x, y) != $gamePlayer.lockEvent) {
-				const eventId = $gameMap.eventIdXy(x, y);
-				// console.log("EVENT", x, y, eventId);
-				$gamePlayer.lockEvent = eventId;
+		const eventId = $gameMap.eventIdXy(x, y);
+		if (eventId) {
+			if (eventId != $gamePlayer.lockEvent) {
+				if ($dataMap.events[eventId].meta.lockable) {
+					// console.log("EVENT", x, y, eventId);
+					$gamePlayer.lockEvent = eventId;
 
-				return eventId;
-			} else {
-				console.log("oui");
-			}
+					return eventId;
+				}
+			} 
 		}
 		return false;
 	}
