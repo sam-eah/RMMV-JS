@@ -729,12 +729,10 @@ Sam.RH.version = 4.0;
 	// =============================================================================
 
 	// OVERWRITE
-	if (Sam.RH.OverWrite) {
-		Game_Player.prototype.canPass = function(x, y, d) {
-			return this.Sam_RH_canPass(x, y, d);
-		};
+	Game_Player.prototype.canPass = function(x, y, d) {
+		return this.Sam_RH_canPass(x, y, d);
 	}
-
+	
 	Game_Player.prototype.canPassTile = function(x, y) {
 		return this.Sam_RH_canPass($gamePlayer.direction());
 	};
@@ -1252,11 +1250,22 @@ Sam.RH.version = 4.0;
 		return $gameMap.eventIdXy(tile.x, tile.y); 
 	}
 
+	const killEvent = (eventId) => {
+		const event = $gameMap.event(eventId);
+		event.dead = true;
+		if ($gamePlayer.lockEvent == eventId) {
+			$gamePlayer.lockEvent = 0;
+			$gameScreen.erasePicture(1);
+		}
+	}
+
 	const damageEnemy = (tile) => {
-		let eventId = getEventTileId(tile);
+		const eventId = getEventTileId(tile);
+		const event = $gameMap.event(eventId);
 		if (eventId) {
 			$gameSelfSwitches.setValue([$gameMap._mapId, eventId, 'D'], true);
-			$gameMap.event(eventId).requestAnimation(126);
+			event.requestAnimation(126);
+			killEvent(eventId);
 		}
 	}
 
@@ -1293,19 +1302,20 @@ Sam.RH.version = 4.0;
 	Game_Event.prototype.Sam_RH_updateLock = function() {
 	    // console.log($gamePlayer.lockEvent);
 	    if ($gamePlayer.lockEvent) {
-	    	// console.log("oui");
 	    	const eventId = $gamePlayer.lockEvent
 			const event = $gameMap.event(eventId);
-			const screenX = event.screenX();
-			const screenY = event.screenY();
-			// console.log("EVENT", eventId, screenX, screenY);
-			// console.log(screenX, screenY);
-			if (Math.hypot(event.x - $gamePlayer.x, event.y - $gamePlayer.y) <= 5) {
-				$gameScreen.showPicture(1, "Lock", 1, screenX, screenY - 14, 100, 100, 255, 0);
-				$gamePlayer.turnTowardCharacter(event);
-			}else {
-				$gamePlayer.lockEvent = 0;
-				$gameScreen.erasePicture(1);
+			if (!event.dead) {
+				const screenX = event.screenX();
+				const screenY = event.screenY();
+				// console.log("EVENT", eventId, screenX, screenY);
+				// console.log(screenX, screenY);
+				if (Math.hypot(event.x - $gamePlayer.x, event.y - $gamePlayer.y) <= 5) {
+					$gameScreen.showPicture(1, "Lock", 1, screenX, screenY - 14, 100, 100, 255, 0);
+					$gamePlayer.turnTowardCharacter(event);
+				}else {
+					$gamePlayer.lockEvent = 0;
+					$gameScreen.erasePicture(1);
+				}
 			}
 		}
 	}
@@ -1333,9 +1343,13 @@ Sam.RH.version = 4.0;
 	// Changing Lock Target
 	Game_CharacterBase.prototype.Sam_RH_Locking = function(x, y){
 		const eventId = $gameMap.eventIdXy(x, y);
+		const event = $dataMap.events[eventId];
 		if (eventId) {
+			if (event.dead) {
+				return false;
+			}
 			if (eventId != $gamePlayer.lockEvent) {
-				if ($dataMap.events[eventId].meta.lockable) {
+				if (event.meta.lockable) {
 					// console.log("EVENT", x, y, eventId);
 					$gamePlayer.lockEvent = eventId;
 
