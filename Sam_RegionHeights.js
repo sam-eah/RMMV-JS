@@ -729,12 +729,53 @@ Sam.RH.version = 4.0;
 	// =============================================================================
 
 	// OVERWRITE
-	Game_Player.prototype.canPass = function(x, y, d) {
+	Game_CharacterBase.prototype.canPass = function(x, y, d) {
 		return this.Sam_RH_canPass(x, y, d);
 	}
-	
-	Game_Player.prototype.canPassTile = function(x, y) {
-		return this.Sam_RH_canPass($gamePlayer.direction());
+
+	Game_CharacterBase.prototype.canPassTile = function(x, y) {
+		return this.Sam_RH_canPass(this.direction());
+	};
+
+	Game_CharacterBase.prototype.Sam_RH_canPass = function(x, y, d) {
+		// return true;
+		// console.log("canPass ?");
+		const tile1 = getTile(x, y);
+		const tile2 = getTile(
+			$gameMap.roundXWithDirection(x, d),
+			$gameMap.roundYWithDirection(y, d)
+		);
+
+		if (this.isThrough() || this.isDebugThrough()) {
+			return true;
+		}
+
+		// Calculate height (z) difference
+		const dZ = tile2.z - tile1.z;
+		const adId = Math.abs(tile2.id - tile1.id);
+
+		if (!$gameMap.isValid(tile2.x, tile2.y)) {
+			return false;
+		}
+
+		if (tile2.id == 255) {
+			return false;
+		}
+		if (this.isCollidedWithCharacters(tile2.x, tile2.y)) {
+			return false;
+		}
+
+		if (tile2.z == 0 && d != 2) {
+			return false;
+		}
+
+		if (adId != 5 && (tile1.g != 9 && tile2.g != 9)) {
+			if (dZ != 0) {
+				return false;
+			}
+		}
+
+		return true;
 	};
 
 	Game_Player.prototype.Sam_RH_canPass = function(x, y, d) {
@@ -746,7 +787,7 @@ Sam.RH.version = 4.0;
 			$gameMap.roundYWithDirection(y, d)
 		);
 
-		if ($gamePlayer.isThrough() || $gamePlayer.isDebugThrough()) {
+		if (this.isThrough() || this.isDebugThrough()) {
 			Sam.RH.GroundChange(tile1.g, tile2.g);
 			return true;
 		}
@@ -762,8 +803,8 @@ Sam.RH.version = 4.0;
 			if (adId != 5 && (tile1.g != 9 && tile2.g != 9)) {
 				if (tile1.id != 0) {
 					if (Sam.RH.AutoClimb) {
-						$gamePlayer.setDirection(d);
-						$gamePlayer.Sam_RH_ClimbUp();
+						this.setDirection(d);
+						this.Sam_RH_ClimbUp();
 					}
 				}
 			}
@@ -803,8 +844,8 @@ Sam.RH.version = 4.0;
 			if (dZ != 0) {
 				if (dZ < 0) {
 					if (Sam.RH.AutoFall) {
-						$gamePlayer.setDirection(d);
-						$gamePlayer.Sam_RH_FallDown();
+						this.setDirection(d);
+						this.Sam_RH_FallDown();
 					}
 				}
 				return false;
@@ -1088,28 +1129,28 @@ Sam.RH.version = 4.0;
 		const climbingPlayerTile = getClimbingPlayerTile();
 		const jumpingPlayerTile = getJumpingPlayerTile();
 
-		if ($gamePlayer.direction() == 2) {
+		if (this.direction() == 2) {
 			if (playerTile.z + 1 == climbingPlayerTile.z &&
-				!$gamePlayer.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
+				!this.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
 				this.Sam_RH_ClimbUp();
 			} else if (playerTile.z >= jumpingPlayerTile.z &&
-				!$gamePlayer.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)) {
+				!this.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)) {
 				Sam.RH.moveRouteJump(0, 2);
 			} else if (playerTile.z >= lookingPlayerTile.z &&
-				!$gamePlayer.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
+				!this.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
 				Sam.RH.moveRouteJump(0, 0);
 			}
 		} else if (playerTile.z + 1 == climbingPlayerTile.z &&
-				!$gamePlayer.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
+				!this.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
 			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z + 0.5 >= jumpingPlayerTile.z &&
 			jumpingPlayerTile.id != 0 &&
-				!$gamePlayer.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
+				!this.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
 		) {
-			switch ($gamePlayer.direction()) {
+			switch (this.direction()) {
 				case 4:
 					Sam.RH.moveRouteJump(-2, 0);
 					break;
@@ -1123,9 +1164,9 @@ Sam.RH.version = 4.0;
 		} else if (
 			playerTile.z >= lookingPlayerTile.z &&
 			lookingPlayerTile.id != 0 &&
-				!$gamePlayer.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)
+				!this.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)
 		) {
-			switch ($gamePlayer.direction()) {
+			switch (this.direction()) {
 				case 4:
 					Sam.RH.moveRouteJump(-1, 0);
 					break;
@@ -1153,9 +1194,9 @@ Sam.RH.version = 4.0;
 		if (
 			playerTile.z + 1 == climbingPlayerTile.z &&
 			(adZ != 0 || adZ != 0.5) &&
-				!$gamePlayer.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)
+				!this.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)
 		) {
-			switch ($gamePlayer.direction()) {
+			switch (this.direction()) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1, false);
 					break;
@@ -1181,7 +1222,7 @@ Sam.RH.version = 4.0;
 		const fallingPlayerTile = getFallingPlayerTile();
 
 		if (playerTile.z > lookingPlayerTile.z) {
-			switch ($gamePlayer.direction()) {
+			switch (this.direction()) {
 				case 2:
 					Sam.RH.moveRouteJump(0, 1);
 					break;
@@ -1190,7 +1231,7 @@ Sam.RH.version = 4.0;
 					break;
 			}
 			if (playerTile.z > fallingPlayerTile.z) {
-				switch ($gamePlayer.direction()) {
+				switch (this.direction()) {
 					case 4:
 						Sam.RH.moveRouteJump(-1, 0);
 						break;
@@ -1210,15 +1251,15 @@ Sam.RH.version = 4.0;
 
 		if (
 			playerTile.z + 0.5 >= lookingPlayerTile.z &&
-			(lookingPlayerTile.id != 0 || $gamePlayer.direction() == 2)
+			(lookingPlayerTile.id != 0 || this.direction() == 2)
 		) {
 			if (
 				playerTile.z + 0.5 >= jumpingPlayerTile.z &&
-				(jumpingPlayerTile.id != 0 || $gamePlayer.direction() == 2) &&
-				!$gamePlayer.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
+				(jumpingPlayerTile.id != 0 || this.direction() == 2) &&
+				!this.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
 			) {
 				Sam.RH.moveRouteDash(2);
-			} else if (!$gamePlayer.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
+			} else if (!this.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
 				Sam.RH.moveRouteDash(1);
 			}
 		} else {
