@@ -1307,38 +1307,51 @@ Sam.RH.version = 4.0;
 		}
 	}
 
-	Game_CharacterBase.prototype.Sam_RH_Attack = function() {
-		damageEnemy(this.LookingTile());
+	const updateEndurance = () => {
+		if ($gameActors.actor(1)._mp < 0) $gameActors.actor(1)._mp = 0;
+		if ($gameActors.actor(1).mp < $gameActors.actor(1).mmp) $gameActors.actor(1)._mp += 0.05;
+		$gameScreen.movePicture(92, 0, 145, 84, 100*$gameActors.actor(1).mp/$gameActors.actor(1).mmp, 100, 255, 0, 1)
+	}
 
-		if (this.direction() == 8) {
-			this.requestAnimation(122);
-			damageEnemy(this.NearbyTile(7));
-			damageEnemy(this.NearbyTile(9));
+	Game_CharacterBase.prototype.Sam_RH_Attack = function() {
+		if ($gameActors.actor(1).mp >= 20) {
+			damageEnemy(this.LookingTile());
+			$gameActors.actor(1)._mp -= 20;
+			// updateEndurance();
+
+			if (this.direction() == 8) {
+				this.requestAnimation(122);
+				damageEnemy(this.NearbyTile(7));
+				damageEnemy(this.NearbyTile(9));
+			}
+			else if (this.direction() == 6) {
+				this.requestAnimation(123);
+				damageEnemy(this.NearbyTile(3));
+				damageEnemy(this.NearbyTile(9));
+			}
+			else if (this.direction() == 4) {
+				this.requestAnimation(124);
+				damageEnemy(this.NearbyTile(7));
+				damageEnemy(this.NearbyTile(1));
+			}
+			else if (this.direction() == 2) {
+				this.requestAnimation(125);
+				damageEnemy(this.NearbyTile(3));
+				damageEnemy(this.NearbyTile(1));
+			}
+			// $gameInterpreter.setWaitMode('animation');
 		}
-		else if (this.direction() == 6) {
-			this.requestAnimation(123);
-			damageEnemy(this.NearbyTile(3));
-			damageEnemy(this.NearbyTile(9));
-		}
-		else if (this.direction() == 4) {
-			this.requestAnimation(124);
-			damageEnemy(this.NearbyTile(7));
-			damageEnemy(this.NearbyTile(1));
-		}
-		else if (this.direction() == 2) {
-			this.requestAnimation(125);
-			damageEnemy(this.NearbyTile(3));
-			damageEnemy(this.NearbyTile(1));
-		}
-		// $gameInterpreter.setWaitMode('animation');
 	}
 
 	Game_CharacterBase.prototype.Sam_RH_CircleAttack = function() {
-		this.requestAnimation(129);
-		let i = 1;
-		while (i <= 9){
-			damageEnemy(this.NearbyTile(i));
-			i++;
+		if ($gameActors.actor(1).mp >= 20) {
+			$gameActors.actor(1)._mp -= 50;
+			this.requestAnimation(130);
+			let i = 1;
+			while (i <= 9){
+				damageEnemy(this.NearbyTile(i));
+				i++;
+			}
 		}
 	}
 
@@ -1373,6 +1386,7 @@ Sam.RH.version = 4.0;
 	    Game_Character.prototype.update.call(this);
 
 	    this.Sam_RH_updateLock();
+	    updateEndurance();
 	};
 
 	// Aliasing 
