@@ -620,14 +620,13 @@ Sam.RH.version = 4.0;
 	// getTile
 	// =============================================================================
 
-
 	Game_CharacterBase.prototype.Tile = function() {
 		return new Tile(this.x, this.y);
-	}
+	};
 
 	Game_CharacterBase.prototype.NearbyTile = function(d) {
 		return this.Tile().NearbyTile(d);
-	}
+	};
 
 	Game_CharacterBase.prototype.LookingTile = function() {
 		return this.Tile().NearbyTile(this.direction());
@@ -728,7 +727,7 @@ Sam.RH.version = 4.0;
 	// OVERWRITE
 	Game_CharacterBase.prototype.canPass = function(x, y, d) {
 		return this.Sam_RH_canPass(x, y, d);
-	}
+	};
 
 	Game_CharacterBase.prototype.canPassTile = function(x, y) {
 		return this.Sam_RH_canPass(this.direction());
@@ -868,7 +867,6 @@ Sam.RH.version = 4.0;
 		}
 
 		start() {
-			console.log("jump");
 			this.moveRoute.list = this.moveRoute.list.concat([
 				{ code: Game_Character.ROUTE_THROUGH_ON },
 				{ code: Game_Character.ROUTE_WALK_ANIME_OFF },
@@ -877,7 +875,6 @@ Sam.RH.version = 4.0;
 		}
 
 		jump(jumpx, jumpy) {
-			console.log("jump");
 			this.moveRoute.list = this.moveRoute.list.concat([
 				{
 					code: Game_Character.ROUTE_CHANGE_IMAGE,
@@ -890,7 +887,7 @@ Sam.RH.version = 4.0;
 			]);
 		}
 
-		dash(dash) {
+		beforeDash() {
 			this.moveRoute.list = this.moveRoute.list.concat([
 				{
 					code: Game_Character.ROUTE_CHANGE_SPEED,
@@ -901,21 +898,20 @@ Sam.RH.version = 4.0;
 					parameters: [$gamePlayer.characterName(), Sam.RH.Anim_Dash]
 				}
 			]);
+		}
 
-			// Show Dash Animation
-			if (Sam.RH.DashAnimation) {
-				this.moveRoute.list = this.moveRoute.list.concat([
-					{
-						code: Game_Character.ROUTE_SCRIPT,
-						parameters: [
-							"$gamePlayer.requestAnimation(" +
-								Sam.RH.DashAnimation +
-								");"
-						]
-					}
-				]);
-			}
+		animation(animation) {
+			this.moveRoute.list = this.moveRoute.list.concat([
+				{
+					code: Game_Character.ROUTE_SCRIPT,
+					parameters: [
+						"$gamePlayer.requestAnimation(" + animation + ");"
+					]
+				}
+			]);
+		}
 
+		dash(dash) {
 			// Add moveCommand Dash
 			if (dash >= 1) {
 				this.moveRoute.list = this.moveRoute.list.concat([
@@ -1096,8 +1092,55 @@ Sam.RH.version = 4.0;
 		// Start moveCommands
 		route.start();
 
+		route.beforeDash();
+		if (Sam.RH.DashAnimation) {
+			route.animation(Sam.RH.DashAnimation);
+		}
 		// Add moveCommand Jump
 		route.dash(dash);
+
+		// Add moveCommand Fall
+		route.beforeFall();
+		route.fall();
+
+		route.finish();
+
+		// Change Ground Common Events
+		route.changeGroundCommands(route.startTile.g, route.endTile.g);
+
+		// End moveCommands
+		route.end();
+
+		// set moveRoute
+		if (!$gamePlayer.isMoveRouteForcing())
+			$gamePlayer.forceMoveRoute(route.moveRoute);
+	};
+
+	// =============================================================================
+	// MoveRoute Flashing & Falling
+	// =============================================================================
+
+	Sam.RH.moveRouteFlash = (x, y) => {
+		// Create moveRoute
+		let route = new Route();
+
+		route.startTile = $gamePlayer.Tile();
+
+		route.endTile = new Tile(x, y);
+
+		// Start moveCommands
+		route.start();
+
+		// Transfer
+		$gamePlayer.reserveTransfer(
+			$gameMap._mapId,
+			x,
+			y,
+			$gamePlayer.direction(),
+			3
+		);
+
+		route.animation(131);
 
 		// Add moveCommand Fall
 		route.beforeFall();
@@ -1127,25 +1170,48 @@ Sam.RH.version = 4.0;
 		const jumpingPlayerTile = this.JumpingTile();
 
 		if (this.direction() == 2) {
-			if (playerTile.z + 1 == climbingPlayerTile.z &&
-				!this.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
+			if (
+				playerTile.z + 1 == climbingPlayerTile.z &&
+				!this.isCollidedWithCharacters(
+					climbingPlayerTile.x,
+					climbingPlayerTile.y
+				)
+			) {
 				this.Sam_RH_ClimbUp();
-			} else if (playerTile.z >= jumpingPlayerTile.z &&
-				!this.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)) {
+			} else if (
+				playerTile.z >= jumpingPlayerTile.z &&
+				!this.isCollidedWithCharacters(
+					jumpingPlayerTile.x,
+					jumpingPlayerTile.y
+				)
+			) {
 				Sam.RH.moveRouteJump(0, 2);
-			} else if (playerTile.z >= lookingPlayerTile.z &&
-				!this.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
+			} else if (
+				playerTile.z >= lookingPlayerTile.z &&
+				!this.isCollidedWithCharacters(
+					lookingPlayerTile.x,
+					lookingPlayerTile.y
+				)
+			) {
 				Sam.RH.moveRouteJump(0, 1);
 			} else {
 				Sam.RH.moveRouteJump(0, 0);
 			}
-		} else if (playerTile.z + 1 == climbingPlayerTile.z &&
-				!this.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)) {
+		} else if (
+			playerTile.z + 1 == climbingPlayerTile.z &&
+			!this.isCollidedWithCharacters(
+				climbingPlayerTile.x,
+				climbingPlayerTile.y
+			)
+		) {
 			this.Sam_RH_ClimbUp();
 		} else if (
 			playerTile.z + 0.5 >= jumpingPlayerTile.z &&
 			jumpingPlayerTile.id != 0 &&
-				!this.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
+			!this.isCollidedWithCharacters(
+				jumpingPlayerTile.x,
+				jumpingPlayerTile.y
+			)
 		) {
 			switch (this.direction()) {
 				case 4:
@@ -1161,7 +1227,10 @@ Sam.RH.version = 4.0;
 		} else if (
 			playerTile.z >= lookingPlayerTile.z &&
 			lookingPlayerTile.id != 0 &&
-				!this.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)
+			!this.isCollidedWithCharacters(
+				lookingPlayerTile.x,
+				lookingPlayerTile.y
+			)
 		) {
 			switch (this.direction()) {
 				case 4:
@@ -1191,7 +1260,10 @@ Sam.RH.version = 4.0;
 		if (
 			playerTile.z + 1 == climbingPlayerTile.z &&
 			(adZ != 0 || adZ != 0.5) &&
-				!this.isCollidedWithCharacters(climbingPlayerTile.x, climbingPlayerTile.y)
+			!this.isCollidedWithCharacters(
+				climbingPlayerTile.x,
+				climbingPlayerTile.y
+			)
 		) {
 			switch (this.direction()) {
 				case 2:
@@ -1242,23 +1314,31 @@ Sam.RH.version = 4.0;
 
 	// Dash
 	Game_CharacterBase.prototype.Sam_RH_Dash = function() {
+		$gameActors.actor(1)._mp -= 50;
 		const playerTile = this.Tile();
 		const lookingPlayerTile = this.LookingTile();
 		const jumpingPlayerTile = this.JumpingTile();
 
 		if (
-			playerTile.z + 0.5 >= lookingPlayerTile.z &&
-			(lookingPlayerTile.id != 0 || this.direction() == 2)
+			playerTile.z >= jumpingPlayerTile.z &&
+			(jumpingPlayerTile.id != 0 || this.direction() == 2) &&
+			!this.isCollidedWithCharacters(
+				jumpingPlayerTile.x,
+				jumpingPlayerTile.y
+			) &&
+			this.screenY() <= 528
 		) {
-			if (
-				playerTile.z + 0.5 >= jumpingPlayerTile.z &&
-				(jumpingPlayerTile.id != 0 || this.direction() == 2) &&
-				!this.isCollidedWithCharacters(jumpingPlayerTile.x, jumpingPlayerTile.y)
-			) {
-				Sam.RH.moveRouteDash(2);
-			} else if (!this.isCollidedWithCharacters(lookingPlayerTile.x, lookingPlayerTile.y)) {
-				Sam.RH.moveRouteDash(1);
-			}
+			Sam.RH.moveRouteDash(2);
+		} else if (
+			playerTile.z >= lookingPlayerTile.z &&
+			(lookingPlayerTile.id != 0 || this.direction() == 2) &&
+			!this.isCollidedWithCharacters(
+				lookingPlayerTile.x,
+				lookingPlayerTile.y
+			) &&
+			this.screenY() <= 576
+		) {
+			Sam.RH.moveRouteDash(1);
 		} else {
 			Sam.RH.moveRouteDash(0);
 		}
@@ -1283,35 +1363,45 @@ Sam.RH.version = 4.0;
 		console.log(this.FallingTile());
 	};
 
+	const getEventTileId = tile => {
+		return $gameMap.eventIdXy(tile.x, tile.y);
+	};
 
-	const getEventTileId = (tile) => {
-		return $gameMap.eventIdXy(tile.x, tile.y); 
-	}
-
-	const killEvent = (eventId) => {
+	const killEvent = eventId => {
 		const event = $gameMap.event(eventId);
 		event.dead = true;
 		if ($gamePlayer.lockEvent == eventId) {
 			$gamePlayer.lockEvent = 0;
 			$gameScreen.erasePicture(1);
 		}
-	}
+	};
 
-	const damageEnemy = (tile) => {
+	const damageEnemy = tile => {
 		const eventId = getEventTileId(tile);
 		const event = $gameMap.event(eventId);
 		if (eventId) {
-			$gameSelfSwitches.setValue([$gameMap._mapId, eventId, 'D'], true);
+			$gameSelfSwitches.setValue([$gameMap._mapId, eventId, "D"], true);
 			event.requestAnimation(126);
 			killEvent(eventId);
 		}
-	}
+	};
 
 	const updateEndurance = () => {
 		if ($gameActors.actor(1)._mp < 0) $gameActors.actor(1)._mp = 0;
-		if ($gameActors.actor(1).mp < $gameActors.actor(1).mmp) $gameActors.actor(1)._mp += 0.05;
-		$gameScreen.movePicture(92, 0, 145, 84, 100*$gameActors.actor(1).mp/$gameActors.actor(1).mmp, 100, 255, 0, 1)
-	}
+		if ($gameActors.actor(1).mp < $gameActors.actor(1).mmp)
+			$gameActors.actor(1)._mp += 0.05;
+		$gameScreen.movePicture(
+			92,
+			0,
+			145,
+			84,
+			(100 * $gameActors.actor(1).mp) / $gameActors.actor(1).mmp,
+			100,
+			255,
+			0,
+			1
+		);
+	};
 
 	Game_CharacterBase.prototype.Sam_RH_Attack = function() {
 		if ($gameActors.actor(1).mp >= 20) {
@@ -1323,84 +1413,95 @@ Sam.RH.version = 4.0;
 				this.requestAnimation(122);
 				damageEnemy(this.NearbyTile(7));
 				damageEnemy(this.NearbyTile(9));
-			}
-			else if (this.direction() == 6) {
+			} else if (this.direction() == 6) {
 				this.requestAnimation(123);
 				damageEnemy(this.NearbyTile(3));
 				damageEnemy(this.NearbyTile(9));
-			}
-			else if (this.direction() == 4) {
+			} else if (this.direction() == 4) {
 				this.requestAnimation(124);
 				damageEnemy(this.NearbyTile(7));
 				damageEnemy(this.NearbyTile(1));
-			}
-			else if (this.direction() == 2) {
+			} else if (this.direction() == 2) {
 				this.requestAnimation(125);
 				damageEnemy(this.NearbyTile(3));
 				damageEnemy(this.NearbyTile(1));
 			}
 			// $gameInterpreter.setWaitMode('animation');
 		}
-	}
+	};
 
 	Game_CharacterBase.prototype.Sam_RH_CircleAttack = function() {
 		if ($gameActors.actor(1).mp >= 20) {
 			$gameActors.actor(1)._mp -= 50;
 			this.requestAnimation(130);
 			let i = 1;
-			while (i <= 9){
+			while (i <= 9) {
 				damageEnemy(this.NearbyTile(i));
 				i++;
 			}
 		}
-	}
+	};
 
 	// Display Lock image
 
 	Game_Event.prototype.Sam_RH_updateLock = function() {
-	    // console.log($gamePlayer.lockEvent);
-	    if ($gamePlayer.lockEvent) {
-	    	const eventId = $gamePlayer.lockEvent
+		// console.log($gamePlayer.lockEvent);
+		if ($gamePlayer.lockEvent) {
+			const eventId = $gamePlayer.lockEvent;
 			const event = $gameMap.event(eventId);
 			if (!event.dead) {
 				const screenX = event.screenX();
 				const screenY = event.screenY();
 				// console.log("EVENT", eventId, screenX, screenY);
 				// console.log(screenX, screenY);
-				if (Math.hypot(event.x - $gamePlayer.x, event.y - $gamePlayer.y) <= 5) {
-					$gameScreen.showPicture(1, "Lock", 1, screenX, screenY - 14, 100, 100, 255, 0);
+				if (
+					Math.hypot(
+						event.x - $gamePlayer.x,
+						event.y - $gamePlayer.y
+					) <= 5
+				) {
+					$gameScreen.showPicture(
+						1,
+						"Lock",
+						1,
+						screenX,
+						screenY - 14,
+						100,
+						100,
+						255,
+						0
+					);
 					$gamePlayer.turnTowardCharacter(event);
-				}else {
+				} else {
 					$gamePlayer.lockEvent = 0;
 					$gameScreen.erasePicture(1);
 				}
 			}
 		}
-	}
+	};
 
-
-	// Aliasing 
-	Sam.RH.Game_Event_update = Game_Event.prototype.update
+	// Aliasing
+	Sam.RH.Game_Event_update = Game_Event.prototype.update;
 	Game_Event.prototype.update = function() {
 		Sam.RH.Game_Event_update.call(this);
-	    Game_Character.prototype.update.call(this);
+		Game_Character.prototype.update.call(this);
 
-	    this.Sam_RH_updateLock();
-	    updateEndurance();
+		this.Sam_RH_updateLock();
+		updateEndurance();
 	};
 
-	// Aliasing 
-	Sam.RH.Game_Player_clearTransferInfo = Game_Player.prototype.clearTransferInfo
+	// Aliasing
+	Sam.RH.Game_Player_clearTransferInfo =
+		Game_Player.prototype.clearTransferInfo;
 	Game_Player.prototype.clearTransferInfo = function() {
-	    Sam.RH.Game_Player_clearTransferInfo.call(this);
+		Sam.RH.Game_Player_clearTransferInfo.call(this);
 
-	    this.lockEvent = 0;
-	    $gameScreen.erasePicture(1);
+		this.lockEvent = 0;
+		$gameScreen.erasePicture(1);
 	};
-
 
 	// Changing Lock Target
-	Game_CharacterBase.prototype.Sam_RH_Locking = function(x, y){
+	Game_CharacterBase.prototype.Sam_RH_Locking = function(x, y) {
 		const eventId = $gameMap.eventIdXy(x, y);
 		const event = $dataMap.events[eventId];
 		if (eventId) {
@@ -1414,10 +1515,10 @@ Sam.RH.version = 4.0;
 
 					return eventId;
 				}
-			} 
+			}
 		}
 		return false;
-	}
+	};
 
 	Game_CharacterBase.prototype.Sam_RH_Lock = function() {
 		var x_centre = $gamePlayer.x;
@@ -1432,28 +1533,28 @@ Sam.RH.version = 4.0;
 
 			while (y >= x) {
 				// console.log("r", r);
-				if (this.Sam_RH_Locking(x_centre + x, y_centre + y)){
+				if (this.Sam_RH_Locking(x_centre + x, y_centre + y)) {
 					return;
 				}
-				if (this.Sam_RH_Locking(x_centre + y, y_centre + x)){
+				if (this.Sam_RH_Locking(x_centre + y, y_centre + x)) {
 					return;
 				}
-				if (this.Sam_RH_Locking(x_centre - x, y_centre + y)){
+				if (this.Sam_RH_Locking(x_centre - x, y_centre + y)) {
 					return;
 				}
-				if (this.Sam_RH_Locking(x_centre - y, y_centre + x)){
+				if (this.Sam_RH_Locking(x_centre - y, y_centre + x)) {
 					return;
 				}
-				if (this.Sam_RH_Locking(x_centre + x, y_centre - y)){
+				if (this.Sam_RH_Locking(x_centre + x, y_centre - y)) {
 					return;
 				}
-				if (this.Sam_RH_Locking(x_centre + y, y_centre - x)){
+				if (this.Sam_RH_Locking(x_centre + y, y_centre - x)) {
 					return;
 				}
-				if (this.Sam_RH_Locking(x_centre - x, y_centre - y)){
+				if (this.Sam_RH_Locking(x_centre - x, y_centre - y)) {
 					return;
 				}
-				if (this.Sam_RH_Locking(x_centre - y, y_centre - x)){
+				if (this.Sam_RH_Locking(x_centre - y, y_centre - x)) {
 					return;
 				}
 
@@ -1476,29 +1577,62 @@ Sam.RH.version = 4.0;
 		$gameScreen.erasePicture(1);
 	};
 
+	Game_CharacterBase.prototype.Sam_RH_Flash = function() {
+		$gameActors.actor(1)._mp -= 100;
+		const playerTile = this.Tile();
+		const lookingPlayerTile = this.LookingTile();
+		const jumpingPlayerTile = this.JumpingTile();
+		const mapId = $gameMap._mapId;
+		console.log("map", $gameMap._displayY);
+
+		if (
+			playerTile.z >= jumpingPlayerTile.z &&
+			(jumpingPlayerTile.id != 0 || this.direction() == 2) &&
+			!this.isCollidedWithCharacters(
+				jumpingPlayerTile.x,
+				jumpingPlayerTile.y
+			) &&
+			this.screenY() <= 528
+		) {
+			Sam.RH.moveRouteFlash(jumpingPlayerTile.x, jumpingPlayerTile.y);
+		} else if (
+			playerTile.z >= lookingPlayerTile.z &&
+			(lookingPlayerTile.id != 0 || this.direction() == 2) &&
+			!this.isCollidedWithCharacters(
+				lookingPlayerTile.x,
+				lookingPlayerTile.y
+			) &&
+			this.screenY() <= 576
+		) {
+			Sam.RH.moveRouteFlash(lookingPlayerTile.x, lookingPlayerTile.y);
+		} else {
+			Sam.RH.moveRouteFlash(playerTile.x, playerTile.y);
+		}
+	};
+
 	Game_Player.prototype.Sam_RH_SpellA = function() {
 		$gamePlayer.Sam_RH_Attack();
-	}
+	};
 
 	Game_Player.prototype.Sam_RH_SpellZ = function() {
 		$gamePlayer.Sam_RH_CircleAttack();
-	}
+	};
 
 	Game_Player.prototype.Sam_RH_SpellE = function() {
 		$gamePlayer.Sam_RH_Attack();
-	}
+	};
 
 	Game_Player.prototype.Sam_RH_SpellR = function() {
 		$gamePlayer.Sam_RH_Attack();
-	}
+	};
 
 	Game_Player.prototype.Sam_RH_SpellD = function() {
 		$gamePlayer.Sam_RH_Dash();
-	}
+	};
 
 	Game_Player.prototype.Sam_RH_SpellF = function() {
-		$gamePlayer.Sam_RH_Attack();
-	}
+		$gamePlayer.Sam_RH_Flash();
+	};
 
 	// Game_Map.prototype.update = function(sceneActive) {
 	//     this.refreshIfNeeded();
