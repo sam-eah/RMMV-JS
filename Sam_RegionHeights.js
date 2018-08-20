@@ -1337,6 +1337,15 @@ Sam.RH.version = 4.0;
 		// $gameInterpreter.setWaitMode('animation');
 	}
 
+	Game_CharacterBase.prototype.Sam_RH_CircleAttack = function() {
+		const playerTile = getPlayerTile();
+		$gamePlayer.requestAnimation(129);
+		let i = 1;
+		while (i <= 9){
+			damageEnemy(playerTile.NearbyTile(i));
+			i++;
+		}
+	}
 
 	// Display Lock image
 
@@ -1458,6 +1467,30 @@ Sam.RH.version = 4.0;
 		$gameScreen.erasePicture(1);
 	};
 
+	Game_Player.prototype.Sam_RH_SpellA = function() {
+		$gamePlayer.Sam_RH_Attack();
+	}
+
+	Game_Player.prototype.Sam_RH_SpellZ = function() {
+		$gamePlayer.Sam_RH_CircleAttack();
+	}
+
+	Game_Player.prototype.Sam_RH_SpellE = function() {
+		$gamePlayer.Sam_RH_Attack();
+	}
+
+	Game_Player.prototype.Sam_RH_SpellR = function() {
+		$gamePlayer.Sam_RH_Attack();
+	}
+
+	Game_Player.prototype.Sam_RH_SpellD = function() {
+		$gamePlayer.Sam_RH_Dash();
+	}
+
+	Game_Player.prototype.Sam_RH_SpellF = function() {
+		$gamePlayer.Sam_RH_Attack();
+	}
+
 	// Game_Map.prototype.update = function(sceneActive) {
 	//     this.refreshIfNeeded();
 	//     if (sceneActive) {
@@ -1508,10 +1541,6 @@ Sam.RH.version = 4.0;
 			$gamePlayer.Sam_RH_ClimbUp();
 		}
 
-		if (command == "Sam_RH_Dash") {
-			$gamePlayer.Sam_RH_Dash();
-		}
-
 		if (command == "Sam_RH_getTile") {
 			$gamePlayer.Sam_RH_getTile(args[0], args[1]);
 		}
@@ -1524,8 +1553,28 @@ Sam.RH.version = 4.0;
 			$gamePlayer.Sam_RH_Lock();
 		}
 
-		if (command == "Sam_RH_Attack") {
-			$gamePlayer.Sam_RH_Attack();
+		if (command == "Sam_RH_SpellA") {
+			$gamePlayer.Sam_RH_SpellA();
+		}
+
+		if (command == "Sam_RH_SpellZ") {
+			$gamePlayer.Sam_RH_SpellZ();
+		}
+
+		if (command == "Sam_RH_SpellE") {
+			$gamePlayer.Sam_RH_SpellE();
+		}
+
+		if (command == "Sam_RH_SpellR") {
+			$gamePlayer.Sam_RH_SpellR();
+		}
+
+		if (command == "Sam_RH_SpellD") {
+			$gamePlayer.Sam_RH_SpellD();
+		}
+
+		if (command == "Sam_RH_SpellF") {
+			$gamePlayer.Sam_RH_SpellF();
 		}
 	};
 })();
