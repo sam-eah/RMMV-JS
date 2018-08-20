@@ -553,22 +553,22 @@ Sam.RH.version = 4.0;
 		NearbyTile(d) {
 			const dx = directionXY(d).x;
 			const dy = directionXY(d).y;
-			return getTile(this.x + dx, this.y + dy);
+			return new Tile(this.x + dx, this.y + dy);
 		}
 
 		JumpingTile(d) {
 			switch (d) {
 				case 2:
-					return getTile(this.x, this.y + 2);
+					return new Tile(this.x, this.y + 2);
 					break;
 				case 4:
-					return getTile(this.x - 2, this.y);
+					return new Tile(this.x - 2, this.y);
 					break;
 				case 6:
-					return getTile(this.x + 2, this.y);
+					return new Tile(this.x + 2, this.y);
 					break;
 				case 8:
-					return getTile(this.x, this.y - 2);
+					return new Tile(this.x, this.y - 2);
 					break;
 			}
 		}
@@ -620,32 +620,29 @@ Sam.RH.version = 4.0;
 	// getTile
 	// =============================================================================
 
-	const getTile = (x, y) => {
-		return new Tile(x, y);
+
+	Game_CharacterBase.prototype.Tile = function() {
+		return new Tile(this.x, this.y);
+	}
+
+	Game_CharacterBase.prototype.NearbyTile = function(d) {
+		return this.Tile().NearbyTile(d);
+	}
+
+	Game_CharacterBase.prototype.LookingTile = function() {
+		return this.Tile().NearbyTile(this.direction());
 	};
 
-	const getPlayerTile = () => {
-		return getTile($gamePlayer.x, $gamePlayer.y);
+	Game_CharacterBase.prototype.JumpingTile = function() {
+		return this.Tile().JumpingTile(this.direction());
 	};
 
-	const getNearbyPlayerTile = d => {
-		return getPlayerTile().NearbyTile(d);
+	Game_CharacterBase.prototype.ClimbingTile = function() {
+		return this.Tile().ClimbingTile(this.direction());
 	};
 
-	const getLookingPlayerTile = () => {
-		return getNearbyPlayerTile($gamePlayer.direction());
-	};
-
-	const getJumpingPlayerTile = () => {
-		return getPlayerTile().JumpingTile($gamePlayer.direction());
-	};
-
-	const getClimbingPlayerTile = () => {
-		return getPlayerTile().ClimbingTile($gamePlayer.direction());
-	};
-
-	const getFallingPlayerTile = () => {
-		return getPlayerTile().FallingTile($gamePlayer.direction());
+	Game_CharacterBase.prototype.FallingTile = function() {
+		return this.Tile().FallingTile(this.direction());
 	};
 
 	// =============================================================================
@@ -740,8 +737,8 @@ Sam.RH.version = 4.0;
 	Game_CharacterBase.prototype.Sam_RH_canPass = function(x, y, d) {
 		// return true;
 		// console.log("canPass ?");
-		const tile1 = getTile(x, y);
-		const tile2 = getTile(
+		const tile1 = new Tile(x, y);
+		const tile2 = new Tile(
 			$gameMap.roundXWithDirection(x, d),
 			$gameMap.roundYWithDirection(y, d)
 		);
@@ -781,8 +778,8 @@ Sam.RH.version = 4.0;
 	Game_Player.prototype.Sam_RH_canPass = function(x, y, d) {
 		// return true;
 		// console.log("canPass ?");
-		const tile1 = getTile(x, y);
-		const tile2 = getTile(
+		const tile1 = new Tile(x, y);
+		const tile2 = new Tile(
 			$gameMap.roundXWithDirection(x, d),
 			$gameMap.roundYWithDirection(y, d)
 		);
@@ -967,7 +964,7 @@ Sam.RH.version = 4.0;
 					this.moveRoute.list = this.moveRoute.list.concat([
 						{ code: Game_Character.ROUTE_MOVE_DOWN }
 					]);
-					this.endTile = getTile(this.endTile.x, this.endTile.y + 1);
+					this.endTile = new Tile(this.endTile.x, this.endTile.y + 1);
 					playerZ -= 1;
 
 					if (playerZ < 0) break;
@@ -1048,8 +1045,8 @@ Sam.RH.version = 4.0;
 		// Create moveRoute
 		let route = new Route();
 
-		route.startTile = getPlayerTile();
-		route.endTile = getTile(
+		route.startTile = $gamePlayer.Tile();
+		route.endTile = new Tile(
 			route.startTile.x + jumpx,
 			route.startTile.y + jumpy
 		);
@@ -1087,13 +1084,13 @@ Sam.RH.version = 4.0;
 		// Create moveRoute
 		let route = new Route();
 
-		route.startTile = getPlayerTile();
+		route.startTile = $gamePlayer.Tile();
 
 		route.endTile = route.startTile;
 		if (dash == 1) {
-			route.endTile = getLookingPlayerTile();
+			route.endTile = $gamePlayer.LookingTile();
 		} else if (dash == 2) {
-			route.endTile = getJumpingPlayerTile();
+			route.endTile = $gamePlayer.JumpingTile();
 		}
 
 		// Start moveCommands
@@ -1124,10 +1121,10 @@ Sam.RH.version = 4.0;
 	// =============================================================================
 
 	Game_CharacterBase.prototype.Sam_RH_Jump = function() {
-		const playerTile = getPlayerTile();
-		const lookingPlayerTile = getLookingPlayerTile();
-		const climbingPlayerTile = getClimbingPlayerTile();
-		const jumpingPlayerTile = getJumpingPlayerTile();
+		const playerTile = this.Tile();
+		const lookingPlayerTile = this.LookingTile();
+		const climbingPlayerTile = this.ClimbingTile();
+		const jumpingPlayerTile = this.JumpingTile();
 
 		if (this.direction() == 2) {
 			if (playerTile.z + 1 == climbingPlayerTile.z &&
@@ -1184,9 +1181,9 @@ Sam.RH.version = 4.0;
 
 	// Climb Up
 	Game_CharacterBase.prototype.Sam_RH_ClimbUp = function() {
-		const playerTile = getPlayerTile();
-		const lookingPlayerTile = getLookingPlayerTile();
-		const climbingPlayerTile = getClimbingPlayerTile();
+		const playerTile = $gamePlayer.Tile();
+		const lookingPlayerTile = $gamePlayer.LookingTile();
+		const climbingPlayerTile = $gamePlayer.ClimbingTile();
 
 		const dZ = lookingPlayerTile.z - playerTile.z;
 		const adZ = Math.abs(dZ);
@@ -1217,9 +1214,9 @@ Sam.RH.version = 4.0;
 	Game_CharacterBase.prototype.Sam_RH_FallDown = function() {
 		console.log("Sam_RH_FallDown");
 
-		const playerTile = getPlayerTile();
-		const lookingPlayerTile = getLookingPlayerTile();
-		const fallingPlayerTile = getFallingPlayerTile();
+		const playerTile = this.Tile();
+		const lookingPlayerTile = this.LookingTile();
+		const fallingPlayerTile = this.FallingTile();
 
 		if (playerTile.z > lookingPlayerTile.z) {
 			switch (this.direction()) {
@@ -1245,9 +1242,9 @@ Sam.RH.version = 4.0;
 
 	// Dash
 	Game_CharacterBase.prototype.Sam_RH_Dash = function() {
-		const playerTile = getPlayerTile();
-		const lookingPlayerTile = getLookingPlayerTile();
-		const jumpingPlayerTile = getJumpingPlayerTile();
+		const playerTile = this.Tile();
+		const lookingPlayerTile = this.LookingTile();
+		const jumpingPlayerTile = this.JumpingTile();
 
 		if (
 			playerTile.z + 0.5 >= lookingPlayerTile.z &&
@@ -1269,21 +1266,21 @@ Sam.RH.version = 4.0;
 
 	// TileZ
 	Game_CharacterBase.prototype.Sam_RH_getTile = function(x, y) {
-		return getTile(x, y);
+		return new Tile(x, y);
 	};
 
 	// GET INFO
 	Game_CharacterBase.prototype.Sam_RH_getInfo = function() {
 		console.log("PlayerTile:");
-		console.log(getPlayerTile());
+		console.log(this.Tile());
 		console.log("LookingPlayerTile:");
-		console.log(getLookingPlayerTile());
+		console.log(this.LookingTile());
 		console.log("JumpingPlayerTile:");
-		console.log(getJumpingPlayerTile());
+		console.log(this.JumpingTile());
 		console.log("ClimbingPlayerTile:");
-		console.log(getClimbingPlayerTile());
+		console.log(this.ClimbingTile());
 		console.log("FallingPlayerTile:");
-		console.log(getFallingPlayerTile());
+		console.log(this.FallingTile());
 	};
 
 
@@ -1311,38 +1308,36 @@ Sam.RH.version = 4.0;
 	}
 
 	Game_CharacterBase.prototype.Sam_RH_Attack = function() {
-		const playerTile = getPlayerTile();
-		damageEnemy(getLookingPlayerTile());
+		damageEnemy(this.LookingTile());
 
-		if ($gamePlayer.direction() == 8) {
-			$gamePlayer.requestAnimation(122);
-			damageEnemy(playerTile.NearbyTile(7));
-			damageEnemy(playerTile.NearbyTile(9));
+		if (this.direction() == 8) {
+			this.requestAnimation(122);
+			damageEnemy(this.NearbyTile(7));
+			damageEnemy(this.NearbyTile(9));
 		}
-		else if ($gamePlayer.direction() == 6) {
-			$gamePlayer.requestAnimation(123);
-			damageEnemy(playerTile.NearbyTile(3));
-			damageEnemy(playerTile.NearbyTile(9));
+		else if (this.direction() == 6) {
+			this.requestAnimation(123);
+			damageEnemy(this.NearbyTile(3));
+			damageEnemy(this.NearbyTile(9));
 		}
-		else if ($gamePlayer.direction() == 4) {
-			$gamePlayer.requestAnimation(124);
-			damageEnemy(playerTile.NearbyTile(7));
-			damageEnemy(playerTile.NearbyTile(1));
+		else if (this.direction() == 4) {
+			this.requestAnimation(124);
+			damageEnemy(this.NearbyTile(7));
+			damageEnemy(this.NearbyTile(1));
 		}
-		else if ($gamePlayer.direction() == 2) {
-			$gamePlayer.requestAnimation(125);
-			damageEnemy(playerTile.NearbyTile(3));
-			damageEnemy(playerTile.NearbyTile(1));
+		else if (this.direction() == 2) {
+			this.requestAnimation(125);
+			damageEnemy(this.NearbyTile(3));
+			damageEnemy(this.NearbyTile(1));
 		}
 		// $gameInterpreter.setWaitMode('animation');
 	}
 
 	Game_CharacterBase.prototype.Sam_RH_CircleAttack = function() {
-		const playerTile = getPlayerTile();
-		$gamePlayer.requestAnimation(129);
+		this.requestAnimation(129);
 		let i = 1;
 		while (i <= 9){
-			damageEnemy(playerTile.NearbyTile(i));
+			damageEnemy(this.NearbyTile(i));
 			i++;
 		}
 	}
